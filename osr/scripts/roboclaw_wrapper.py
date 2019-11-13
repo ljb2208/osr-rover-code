@@ -25,11 +25,12 @@ class MotorControllers(object):
 		rospy.loginfo( "Initializing motor controllers")
 		#self.rc = Roboclaw( rospy.get_param('motor_controller_device', "/dev/serial0"),
 		#					rospy.get_param('baud_rate', 115200))
-		self.rc = Roboclaw("/dev/ttyAMA0",115200)
+		self.rc = Roboclaw("/dev/ttyS0",115200)
 		self.rc.Open()
 		self.accel           = [0]    * 10
 		self.qpps            = [None] * 10
 		self.err             = [None] * 5
+		
 		address_raw = rospy.get_param('motor_controller_addresses')
 		address_list = (address_raw.split(','))
 		self.address = [None]*len(address_list)
@@ -38,12 +39,13 @@ class MotorControllers(object):
 
 		version = 1
 		for address in self.address:
-			print ("Attempting to talk to motor controller",address)
+			rospy.loginfo("Attempting to talk to motor controller: " + str(address))
 			version = version & self.rc.ReadVersion(address)[0]
-			print version
+			rospy.loginfo("Motor controller version: " + str(version))
 		if version != 0:
-			print "[Motor__init__] Sucessfully connected to RoboClaw motor controllers"
+			rospy.loginfo("Sucessfully connected to RoboClaw motor controllers")
 		else:
+			rospy.logerror("Unable to establish connection to Roboclaw motor controllers")
 			raise Exception("Unable to establish connection to Roboclaw motor controllers")
 		self.killMotors()
 		self.enc_min =[]
@@ -98,10 +100,13 @@ class MotorControllers(object):
 		self.enc = [None]*4
 		for i in range(4):
 			mids[i] = (self.enc_max[i] + self.enc_min[i])/2
-		#self.cornerToPosition(mids)
+
+		# set to zero for initial position
+		rospy.logdebug("Initial mid position: " + str(mids))
+		self.cornerToPosition(mids)
 		time.sleep(2)
 		self.killMotors()
-
+			
 	def cornerToPosition(self,tick):
 		'''
 		Method to send position commands to the corner motor
@@ -157,8 +162,7 @@ class MotorControllers(object):
 		else:               command = self.rc.DutyAccelM2
 
 		speed = int(32767 * speed/100.0)
-		return 
-		
+		return command(addr,accel,speed)
 
 	def getCornerEnc(self):
 		enc = []
@@ -242,7 +246,7 @@ class MotorControllers(object):
 			if error:
 				self.killMotors()
 				#self.writeError()
-				rospy.loginfo("Motor controller Error", error)
+				rospy.loginfo("Motor controller Error: " + str(error))
 		return 1
 
 	def writeError(self):

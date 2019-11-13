@@ -1,16 +1,21 @@
 #!/usr/bin/env python
 import time
 import rospy
-from osr_msgs.msg import Commands, Encoder, Status
+from osr_msgs.msg import Commands, Encoder, Status, RunStop
 from roboclaw_wrapper import MotorControllers
 
 global mutex
+global runstop
+runstop = False
 mutex = False
 motorcontrollers = MotorControllers()
 
 def callback(cmds):
 	global mutex	
-	rospy.loginfo(cmds)
+	global runstop	
+
+	rospy.loginfo("Commands: " + str(cmds))
+	rospy.loginfo("Runstop: " + str(runstop))
 	while mutex:
 		time.sleep(0.001)
 		#print "cmds are being buffered"
@@ -20,20 +25,28 @@ def callback(cmds):
 	for i in range(6):
 		# PUT THIS BACK IN
 		#motorcontrollers.sendMotorDuty(i,cmds.drive_motor[i])
-		motorcontrollers.sendSignedDutyAccel(i,cmds.drive_motor[i])
+		if (runstop == False):
+			motorcontrollers.sendSignedDutyAccel(i,0)	
+		else:
+			motorcontrollers.sendSignedDutyAccel(i,cmds.drive_motor[i])
 		pass
 	mutex = False
 
+def runstop_callback(message):
+	global runstop
+	runstop = message.run
+
 def shutdown():
-	print "killing motors"
+	rospy.loginfo("killing motors")
 	motorcontrollers.killMotors()
 
 
 if __name__ == "__main__":
 
-	rospy.init_node("motor_controller")
+	rospy.init_node("motor_controller")	
 	rospy.loginfo("Starting the motor_controller node")
 	rospy.on_shutdown(shutdown)
+	runstop_sub = rospy.Subscriber("/runstop", RunStop, runstop_callback)
 	sub = rospy.Subscriber("/robot_commands",Commands,callback)
 	enc_pub = rospy.Publisher("/encoder", Encoder, queue_size =1)
 	status_pub = rospy.Publisher("/status", Status, queue_size =1)

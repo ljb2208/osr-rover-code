@@ -2,20 +2,27 @@
 import rospy
 import time
 from sensor_msgs.msg import Joy
-from osr_msgs.msg import Joystick
+from osr_msgs.msg import Joystick, RunStop
 from std_msgs.msg import Int64MultiArray
 import math
 
 global mode
 global last
+global last_runstop
 global counter
+global runstop
 mode,counter = 0,0
 last = time.time()
+last_runstop = time.time()
+runstop = False
+
 
 def callback(data):
 	global mode
 	global counter
 	global last
+	global last_runstop
+	global runstop
 
 	led_msg = Int64MultiArray()
 	joy_out = Joystick()
@@ -25,11 +32,21 @@ def callback(data):
 	x1 =-data.axes[3]
 	rt = data.axes[2]
 
+	now = time.time()
+
+	if (data.buttons[0] == 1):
+		if (now - last_runstop > 0.75):
+			runstop = not runstop
+			last_runstop = time.time()
+
+	
+
 	cmd = two_joy(x1,y,rt)
+
 
 	dpad = data.buttons[11:]
 	if 1 in dpad: mode = dpad.index(1)
-	now = time.time()
+	
 
 	led_msg.data = [mode,1]
 	if now - last > 0.75:
@@ -42,6 +59,12 @@ def callback(data):
 	last = time.time()
 	led_pub.publish(led_msg)
 	#cmd = cartesian2polar_45(x,y)
+
+	rs = RunStop()
+	rs.run = runstop
+	runstop_pub.publish(rs)
+
+
 	cmd = two_joy(x1,y,rt)
 	joy_out = Joystick()
 	joy_out.vel = cmd[0]
@@ -116,6 +139,7 @@ def two_joy(x,y,rt):
 
 if __name__ == '__main__':
 	global pub
+	global runstop_pub
 	#global led_pub
 	rospy.init_node('joystick')
 	rospy.loginfo('joystick started')
@@ -123,5 +147,6 @@ if __name__ == '__main__':
 	sub = rospy.Subscriber("/joy", Joy, callback)
 	pub = rospy.Publisher('joystick', Joystick, queue_size=1)
 	led_pub = rospy.Publisher('led_cmds', Int64MultiArray, queue_size=1)
+	runstop_pub = rospy.Publisher('runstop', RunStop, queue_size=1)
 
 	rospy.spin()

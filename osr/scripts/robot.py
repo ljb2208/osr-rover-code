@@ -36,6 +36,8 @@ class Robot():
 		for i in range(4):
 			self.mids[i] = (self.enc_max[i] + self.enc_min[i])/2
 
+		rospy.logdebug("enc min: " + str(self.enc_min) + " enc max: " + str(self.enc_max) + " mids: " + str(self.mids))
+
 	@staticmethod
 	def tick2deg(tick,e_min,e_max):
 		'''
@@ -103,9 +105,11 @@ class Robot():
 			v6 = int((v*math.sqrt(b + c))/rmax_float)
 
 			if (r < 0):
-				velocity = [v1,v2,v3,v4,v5,v6]
-			elif (r > 0):
+				#velocity = [v1,v2,v3,v4,v5,v6]
 				velocity = [v6,v5,v4,v3,v2,v1]
+			elif (r > 0):
+				velocity = [v1,v2,v3,v4,v5,v6]
+				#velocity = [v6,v5,v4,v3,v2,v1]
 
 			return velocity
 
@@ -135,11 +139,13 @@ class Robot():
 			elif angles[i] >  45: angles[i] =  43
 
 		if radius > 0:
-
-			return [ang2,-ang1,-ang4,ang3]
+			return [ang3,-ang4,-ang1,ang2]
+			#return [ang2,-ang1,-ang4,ang3]
 		else:
+			return [-ang1,ang2,ang3,-ang4]
+			#return [-ang4,ang3,ang2,-ang1]
 
-			return [-ang4,ang3,ang2,-ang1]
+		
 
 	def getCornerEnc(self):
 		'''
@@ -212,7 +218,8 @@ class Robot():
 				#rospy.loginfo(str(i) + ", " + str(tick[i]) + ", " + str(cur_enc[i]) + ", " + str(self.mids[i]))		 
 				tick[i] = -1          # stopping the motor when it is close to target reduced motor jitter
 		print tick
-		#rospy.loginfo(tick)
+		rospy.logdebug("degrees: " + str(tar_enc))
+		rospy.logdebug("ticks: " + str(tick))
 		return tick
 
 	def generateCommands(self,v,r,encs):
@@ -228,6 +235,8 @@ class Robot():
 		#cur_radius = self.approxTurningRadius(self.getCornerDeg(encs))
 		velocity   = self.calculateVelocity(v,r)
 		ticks      = self.calculateTargetTick(self.calculateTargetDeg(r),encs)
+
+		rospy.loginfo("targetdeg: " + str(self.calculateTargetDeg(r)) + " v: " + str(v) + " r: " + str(r) + " vel: " + str(velocity) + " ticks: " + str(ticks) + " encs: " + str(encs) + " mids: " + str(self.mids))
 
 		return (velocity,ticks)
 
