@@ -1,1 +1,2 @@
 bool run
+bool auto
