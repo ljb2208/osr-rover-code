@@ -1,0 +1,16 @@
+[Unit]
+Description=OSR service
+After=network.target
+
+[Service]
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/lbarnett/catkin_ws/src/osr_bringup/scripts/LaunchOSR.sh
+ExecStart=/home/lbarnett/
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+
+RestartSec=3
+
+[Install]
+Wantedby=multi-user.target
