@@ -9,6 +9,7 @@ import message_filters
 global encs
 global osr
 global runstop
+global auto
 global valid_encs
 osr = Robot()
 encs = [0]*4
@@ -20,7 +21,7 @@ def joy_callback(message):
 	global runstop
 	cmds = Commands()
 
-	if (valid_encs):
+	if (valid_encs and auto == False):
 		out_cmds = osr.generateCommands(message.vel,message.steering,encs)	
 	else:
 		return
@@ -54,7 +55,9 @@ def enc_callback(message):
 
 def runstop_callback(message):
 	global runstop
+	global auto
 	runstop = message.run
+	auto = message.auto
 
 if __name__ == '__main__':
 	rospy.init_node('rover')
