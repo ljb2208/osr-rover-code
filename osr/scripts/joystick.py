@@ -11,10 +11,15 @@ global last
 global last_runstop
 global counter
 global runstop
+global auto
+global last_auto
+
 mode,counter = 0,0
 last = time.time()
 last_runstop = time.time()
+last_auto = time.time()
 runstop = False
+auto = False
 
 
 def callback(data):
@@ -23,6 +28,8 @@ def callback(data):
 	global last
 	global last_runstop
 	global runstop
+
+	publish_runstop = False
 
 	led_msg = Int64MultiArray()
 	joy_out = Joystick()
@@ -36,10 +43,15 @@ def callback(data):
 
 	if (data.buttons[0] == 1):
 		if (now - last_runstop > 0.75):
+			publish_runstop = True
 			runstop = not runstop
 			last_runstop = time.time()
 
-	
+	if (data.buttons[1] == 1):
+		if (now - last_auto > 0.75):
+			publish_runstop = True
+			auto = not auto
+			last_auto = time.time()
 
 	cmd = two_joy(x1,y,rt)
 
@@ -60,9 +72,11 @@ def callback(data):
 	led_pub.publish(led_msg)
 	#cmd = cartesian2polar_45(x,y)
 
-	rs = RunStop()
-	rs.run = runstop
-	runstop_pub.publish(rs)
+	if (publish_runstop):
+		rs = RunStop()
+		rs.run = runstop
+		rs.auto = auto
+		runstop_pub.publish(rs)
 
 
 	cmd = two_joy(x1,y,rt)

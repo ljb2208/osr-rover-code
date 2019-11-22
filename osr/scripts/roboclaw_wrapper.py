@@ -98,6 +98,7 @@ class MotorControllers(object):
 		self.errorCheck()
 		mids = [None]*4
 		self.enc = [None]*4
+		self.drive_enc = [None] * 6
 		for i in range(4):
 			mids[i] = (self.enc_max[i] + self.enc_min[i])/2
 
@@ -175,6 +176,16 @@ class MotorControllers(object):
 		self.enc = enc
 		return enc
 
+	def getDriveEnc(self):
+		drive_enc = []
+		for i in range(6):
+			index = int(math.ceil((i+1)/2.0)-1)
+			if not (i % 2):
+				drive_enc.append(self.rc.ReadEncM1(self.address[index])[1])
+			else:
+				drive_enc.append(self.rc.ReadEncM2(self.address[index])[1])
+		self.drive_enc = drive_enc
+		return drive_enc
 
 	@staticmethod
 	def tick2deg(tick,e_min,e_max):

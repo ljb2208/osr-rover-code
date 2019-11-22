@@ -70,6 +70,8 @@ if __name__ == "__main__":
 			time.sleep(0.001)
 		mutex = True
 		enc.abs_enc = motorcontrollers.getCornerEnc()
+		enc.rel_enc = motorcontrollers.getDriveEnc()
+		
 		#mc_data.abs_enc_angles = motorcontrollers.getCornerEncAngle()
 		if (counter >= 10):
 			
