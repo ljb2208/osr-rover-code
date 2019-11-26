@@ -28,6 +28,8 @@ def callback(data):
 	global last
 	global last_runstop
 	global runstop
+	global auto
+	global last_auto
 
 	publish_runstop = False
 
