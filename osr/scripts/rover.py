@@ -15,9 +15,12 @@ osr = Robot()
 encs = [0]*4
 runstop = False
 valid_encs = False
+auto = False
 
 def joy_callback(message):
 	global encs
+	global valid_encs
+	global auto
 	global runstop
 	cmds = Commands()
 
