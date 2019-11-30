@@ -14,8 +14,8 @@ def callback(cmds):
 	global mutex	
 	global runstop	
 
-	rospy.loginfo("Commands: " + str(cmds))
-	rospy.loginfo("Runstop: " + str(runstop))
+	rospy.logdebug("Commands: " + str(cmds))
+	rospy.logdebug("Runstop: " + str(runstop))
 	while mutex:
 		time.sleep(0.001)
 		#print "cmds are being buffered"

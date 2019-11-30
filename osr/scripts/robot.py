@@ -236,7 +236,7 @@ class Robot():
 		velocity   = self.calculateVelocity(v,r)
 		ticks      = self.calculateTargetTick(self.calculateTargetDeg(r),encs)
 
-		rospy.loginfo("targetdeg: " + str(self.calculateTargetDeg(r)) + " v: " + str(v) + " r: " + str(r) + " vel: " + str(velocity) + " ticks: " + str(ticks) + " encs: " + str(encs) + " mids: " + str(self.mids))
+		rospy.logdebug("targetdeg: " + str(self.calculateTargetDeg(r)) + " v: " + str(v) + " r: " + str(r) + " vel: " + str(velocity) + " ticks: " + str(ticks) + " encs: " + str(encs) + " mids: " + str(self.mids))
 
 		return (velocity,ticks)
 

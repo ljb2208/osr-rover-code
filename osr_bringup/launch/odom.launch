@@ -1,0 +1,4 @@
+<launch>
+	<node name="osr_odometry" pkg="osr_odometry" type="osr_odom.py" respawn="true"/>
+</launch>
+	

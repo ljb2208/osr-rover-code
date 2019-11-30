@@ -20,7 +20,6 @@
 
 
 	<!-- Nodes to run the Open Source Rover -->
-    <node name="osr_odometry" pkg="osr_odometry" type="osr_odom.py" respawn="true" machine="raspberrypi"
 	<node name="motor_controller" pkg="osr" type="motor_controller.py" respawn="true" machine="raspberrypi"/>
     <node name="joystick" pkg="osr" type="joystick.py" respawn="true" machine="raspberrypi"/>
 	<node name="rover" pkg="osr" type="rover.py" respawn="true" machine="raspberrypi"/>	

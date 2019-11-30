@@ -1,0 +1,56 @@
+<?xml version="1.0" ?>
+<robot name="osr_description">
+<!-- xmlns:xacro="http://ros.org/wiki/xacro" -->
+  <!-- All joints except wheels should be revolute eventually with limits put in, instead
+  of continous joints -->        
+  
+  <joint name="depth_camera_joint" type="fixed">
+    <axis xyz="0 1 0" />
+    <origin xyz="1 0 1" rpy="0 0 3.14"/>
+    <parent link="base_link"/>
+    <child link="depth_camera_link"/>
+  </joint>
+
+  <joint name="tracking_camera_joint" type="fixed">
+    <axis xyz="0 1 0" />
+    <origin xyz="1 0 1" rpy="0 0 3.14"/>
+    <parent link="base_link"/>
+    <child link="tracking_camera_link"/>
+  </joint>  
+
+  <link name="base_link">    
+    <collision name="body_collision">
+      <origin rpy="1.57079 -0.0741   0" xyz="0.06131  0.25841 -0.36404"/>
+      <geometry>
+        <mesh filename="package://osr_description/meshes/body_col.STL" scale="1 1 1"/>
+      </geometry>
+    </collision>
+    <visual name="body_visual">
+      <origin rpy="1.57079 -0.0741   0" xyz="0.06131  0.25841 -0.36404"/>
+      <geometry>
+        <mesh filename="package://osr_description/meshes/body.STL" scale="1 1 1"/>
+      </geometry>
+    </visual>    
+  </link>
+
+  <!-- Depth Camera -->
+  <link name="depth_camera_link">
+  <collision>
+    <origin xyz="0 0.14 0.45" rpy="0 0 0"/>
+    <geometry>
+      <box size="1 1 1"/>
+    </geometry>
+  </collision>
+  </link>
+
+  <!-- tracking Camera -->
+  <link name="tracking_camera_link">
+  <collision>
+    <origin xyz="0 0.14 0.39" rpy="0 0 0"/>
+    <geometry>
+      <box size="1 1 1"/>
+    </geometry>
+  </collision>
+  </link>   
+
+</robot>
