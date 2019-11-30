@@ -34,8 +34,8 @@ y = 0.0
 th = 0.0
 
 
-# meters per tick
-mtp = 0.0000579 
+# meters per tick based on 152 mm wheel diameter and 18140.79 ticks per revolution
+mtp = 0.000026322
 # distance between wheels
 wheel_track = 0.455
 
