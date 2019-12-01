@@ -39,7 +39,7 @@ mtp = 0.000026322
 # distance between wheels
 wheel_track = 0.455
 
-base_frame = "base_link"
+base_frame = "base_footprint"
 
 
 def calculateOdometry():
@@ -61,8 +61,8 @@ def calculateOdometry():
     d_left = mtp * (encs[1] - encs_prev[1])
     d_right = mtp * (encs[4] - encs_prev[4])
 
-    rospy.loginfo("d_left: " + str(d_left) + " d_right: " + str(d_right) + " dt: " + str(dt) + " 1:" + str(encs[1]) + " 1 pre: " + str(encs_prev[1]) +
-        " 4: " + str(encs[4]) + " 4 pre: " + str(encs_prev[4]))
+    # rospy.loginfo("d_left: " + str(d_left) + " d_right: " + str(d_right) + " dt: " + str(dt) + " 1:" + str(encs[1]) + " 1 pre: " + str(encs_prev[1]) +
+    #     " 4: " + str(encs[4]) + " 4 pre: " + str(encs_prev[4]))
 
     dxy_avg = (d_left + d_right) / 2.0
     dth = (d_right - d_left) / wheel_track
@@ -75,7 +75,7 @@ def calculateOdometry():
         dy = -math.sin(dth) * dxy_avg
         x += (math.cos(th) * dx - math.sin(th) * dy)
         y += (math.sin(th) * dy + math.cos(th) * dy)
-        rospy.loginfo("dx: " + str(dx) + "dy: " + str(dy) + " dxy_avg: " + str(dxy_avg))
+        # rospy.loginfo("dx: " + str(dx) + "dy: " + str(dy) + " dxy_avg: " + str(dxy_avg))
 
     if (dth != 0):
         th += dth

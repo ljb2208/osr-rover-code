@@ -6,14 +6,14 @@
   
   <joint name="depth_camera_joint" type="fixed">
     <axis xyz="0 1 0" />
-    <origin xyz="1 0 1" rpy="0 0 3.14"/>
+    <origin xyz="0 0.14 0.45" rpy="0 0 3.14"/>
     <parent link="base_link"/>
     <child link="depth_camera_link"/>
   </joint>
 
   <joint name="tracking_camera_joint" type="fixed">
     <axis xyz="0 1 0" />
-    <origin xyz="1 0 1" rpy="0 0 3.14"/>
+    <origin xyz="0 0.14 0.39" rpy="0 0 3.14"/>
     <parent link="base_link"/>
     <child link="tracking_camera_link"/>
   </joint>  
@@ -36,7 +36,7 @@
   <!-- Depth Camera -->
   <link name="depth_camera_link">
   <collision>
-    <origin xyz="0 0.14 0.45" rpy="0 0 0"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
     <geometry>
       <box size="1 1 1"/>
     </geometry>
@@ -46,7 +46,7 @@
   <!-- tracking Camera -->
   <link name="tracking_camera_link">
   <collision>
-    <origin xyz="0 0.14 0.39" rpy="0 0 0"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
     <geometry>
       <box size="1 1 1"/>
     </geometry>

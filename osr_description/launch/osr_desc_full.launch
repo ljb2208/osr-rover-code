@@ -6,7 +6,7 @@
     default="False" />
   <param
     name="robot_description"
-    textfile="$(find osr_description)/urdf/osr_description.urdf" />
+    textfile="$(find osr_description)/urdf/osr_description_full.urdf" />
   <param
     name="use_gui"
     value="$(arg gui)" />
@@ -20,6 +20,6 @@
     type="state_publisher" />  
 
 
-  <node name="camera_to_base" pkg="tf" type="static_transform_publisher" args="0 -0.14 -0.39 0 0 0 tracking_camera_pose_frame base_link 10">
+  <node name="camera_to_base" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 tracking_camera_pose_frame base_link 10">
     </node>
 </launch>
