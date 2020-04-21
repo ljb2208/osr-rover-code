@@ -1,43 +1,14 @@
 <launch>
-	<param name="/baud_rate" type="int" value="115200" />
-	<param name="/motor_controller_device" type="string" value="/dev/serial0" />
-	<param name="/motor_controller_addresses" type="string" value="128,129,130,131,132" />
-	
-	<param name="/enc_min" type="string" value="155,90,175,424" />
-	<param name="/enc_max" type="string" value="1321,1244,1366,1565" />
-	
-	<param name="/qpps" type="string" value="0,0,0,0" />
-	<param name="/accel" type="string" value="0,0,0,0" />
-	<param name="battery_low" type="int" value="11" />
-	<param name="battery_high" type="int" value="18" />
-	<param name="mech_dist" type="string" value="7.254,10.5,10.5,10.073" />
+	<include file="$(find osr_bringup)/launch/hardware.machine" />	
 
 	<arg name="use_rviz"                  default="false"/>
     <arg name="use_rtabmapviz"            default="false"/>
     
 
 	<include file="$(find realsense2_camera)/launch/rs_t265.launch"/>
-<!--	<include file="$(find osr_bringup)/launch/rosbridge.launch"/> -->
-	<include file="$(find realsense2_camera)/launch/rs_camera.launch"/>	
+	<include file="$(find realsense2_camera)/launch/rs_camera.launch"/>	    
 
-    <machine name="rover-osr" address="rover-osr" user="lbarnett" default="true" 
-		env-loader="/home/lbarnett/catkin_ws/src/osr-rover-code/osr_bringup/scripts/setupEnvRemote.sh" />      
-
-	<machine name="ocs" address="ocs" user="lbarnett" default="true" 
-		env-loader="/home/lbarnett/catkin_ws/src/osr-rover-code/osr_bringup/scripts/setupEnvRemoteXPS.sh" />      
-
-	<!-- Nodes to run the Open Source Rover -->
-	<node name="odometry" pkg="osr_odometry" type="osr_odom_ackerman.py" respawn="true" machine="rover-osr"/>
-	<node name="motor_controller" pkg="osr" type="motor_controller.py" respawn="true" machine="rover-osr"/>
-	<node name="joystick" pkg="osr" type="joystick.py" respawn="true" machine="rover-osr"/>
-	<node name="rover" pkg="osr" type="rover.py" respawn="true" machine="rover-osr"/>
-	<node respawn="false" pkg="joy"
-			type="joy_node" name="joy_node" machine="ocs">
-
-		<param name="autorepeat_rate"   value="1.0"/>
-		<param name="coalesce_interval" value="0.05"/>
-
-	</node> 	
+	<include file="$(find osr_bringup)/launch/osr.launch"/>	
 
 	<include file="$(find osr_description)/launch/osr_desc.launch" /> 
 	
@@ -54,8 +25,7 @@
             <arg name="rviz"               value="$(arg use_rviz)"/>
             <arg name="rtabmapviz"         value="$(arg use_rtabmapviz)"/>
 			<arg name="approx_rgbd_sync"    value="false" />
+			<arg name="viz_machine"			value="ocs" />
     </include>
-
-
 </launch>
 	
