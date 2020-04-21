@@ -1,0 +1,6 @@
+<launch>
+	<!--<include file="$(find osr_bringup)/launch/hardware.machine" /> -->
+
+	<node name="osr_ocs" pkg="osr" type="ocs.py" output="screen"/>
+</launch>
+	
