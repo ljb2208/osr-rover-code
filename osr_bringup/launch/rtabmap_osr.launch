@@ -14,15 +14,15 @@
 
 	<arg name="use_rviz"                  default="false"/>
     <arg name="use_rtabmapviz"            default="false"/>
-    
 
+   
 	<include file="$(find realsense2_camera)/launch/rs_t265.launch"/>
 	<include file="$(find realsense2_camera)/launch/rs_camera.launch"/>	
 
-    <machine name="raspberrypi" address="raspberrypi" user="pi" default="true" 
+    <machine name="raspberrypi" address="raspberrypi" user="pi" default="false" 
 		env-loader="/home/pi/catkin_ws/src/osr-rover-code/osr_bringup/scripts/setupEnvRemote.sh" />      
 
-	<machine name="luke-XPS" address="luke-XPS" user="lbarnett" default="true" 
+	<machine name="ocs" address="ocs" user="lbarnett" default="false" 
 		env-loader="/home/lbarnett/catkin_ws/src/osr-rover-code/osr_bringup/scripts/setupEnvRemoteXPS.sh" />      
 
 	<include file="$(find rtabmap_ros)/launch/rtabmap.launch">
@@ -35,11 +35,13 @@
             <arg name="camera_info_topic"  value="/depth_camera/color/camera_info"/>
             <arg name="queue_size"         value="200"/>
             <arg name="rviz"               value="$(arg use_rviz)"/>
-            <arg name="rtabmapviz"         value="$(arg use_rtabmapviz)"/>
+            <arg name="rtabmapviz"         value="$(arg use_rtabmapviz)"/>            
+            <arg name="approx_rgbd_sync"    value="false" />
     </include>
 
-	
-	
+    
+    <include file="$(find osr_description)/launch/osr_desc.launch" />
+
 
 
 </launch>

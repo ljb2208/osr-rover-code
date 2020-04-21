@@ -1,4 +1,4 @@
 <launch>
-	<node name="osr_odometry" pkg="osr_odometry" type="osr_odom.py" respawn="true"/>
+	<node name="osr_odometry" pkg="osr_odometry" type="osr_odom_ackerman.py" respawn="true"/>
 </launch>
 	
