@@ -7,12 +7,90 @@ import rosnode
 import queue
 import threading
 import gc
-from osr_msgs.msg import RunStop, Status
+import os
+import math
+from osr_msgs.msg import RunStop, Status, Encoder
 from functools import partial
+
+class RoverFrame(Frame):
+    def __init__(self, ocs, parentCtrl):
+        super().__init__(parentCtrl, borderwidth=2, relief="groove")
+        self.parentCtrl = parentCtrl
+        self.ocs = ocs
+        self.enc_angles = [0, 0, 0, 0]
+        self.enc_min = [155, 90, 175, 424]
+        self.enc_max = [1321, 1244, 1366, 1565]
+        self.enc_mid = [0,0,0,0]
+        self.enc_len = [0,0,0,0]
+        self.getEncValues()	
+        self.wheels = []        
+        self.wheelWidth = 15
+        self.wheelHeight = 30
+        self.wheelCoords = [(10, 10), (10, 150), (125, 10), (125,150)]
+
+
+        self.buildControls()
+        self.drawRover()
+
+    def getEncValues(self):
+        for i in range(len(self.enc_min)):
+            self.enc_len[i] = self.enc_max[i] - self.enc_min[i]
+            self.enc_mid[i] = self.enc_len[i] /2
+
+    def buildControls(self):
+        self.canv = Canvas(self.parentCtrl)
+        self.canv.grid(row=0, column=0)
+
+    def rotatePoint(self, cx, cy, px, py, sinAngle, cosAngle):
+        nx = cx + (px - cx) * cosAngle + (cy - py) * sinAngle
+        ny = cy + (py - cy) * cosAngle + (cx - px) * sinAngle        
+
+        return nx, ny
+
+    def rotateRectangle(self, rect, coords,  angle):
+        angle = angle * (math.pi / 180)
+
+        # centre coords of rectangle
+        x = coords[0] + self.wheelWidth/2
+        y = coords[1] + self.wheelHeight/2
+
+        sinAngle = math.sin(angle)
+        cosAngle = math.cos(angle)
+
+        x1, y1 = self.rotatePoint(x, y, coords[0], coords[1], sinAngle, cosAngle)        
+        x2, y2 = self.rotatePoint(x, y, coords[0] + self.wheelWidth, coords[1], sinAngle, cosAngle)        
+        x3, y3 = self.rotatePoint(x, y, coords[0] + self.wheelWidth, coords[1] + self.wheelHeight, sinAngle, cosAngle)        
+        x4, y4 = self.rotatePoint(x, y, coords[0], coords[1] + self.wheelHeight, sinAngle, cosAngle)        
+
+        self.canv.coords(rect, x1, y1, x2, y2, x3, y3, x4, y4)
+
+
+    def updateRover(self):
+        for i in range(len(self.wheelCoords)):
+            self.rotateRectangle(self.wheels[i], self.wheelCoords[i], self.enc_angles[i])
+
+    def drawRover(self):
+        self.canv.create_rectangle(50, 65, 100, 130, fill="black") # body        
+        self.canv.create_rectangle(5, 80, 20, 110, fill="black") # left middle wheel        
+        self.canv.create_rectangle(130, 80, 145, 110, fill="black") # right middle wheel        
+        
+        # create corner wheels
+        for w in self.wheelCoords:
+            x = w[0]
+            y = w[1]
+            self.wheels.append(self.canv.create_polygon(x, y, x+self.wheelWidth, y, x + self.wheelWidth, y+self.wheelHeight, x, y+self.wheelHeight, fill="black")) # left front wheel
+
+    def onEncoderMsg(self, msg):
+        for i in range(len(self.enc_mid)):
+            self.enc_angles[i] = (msg.abs_enc[i] - self.enc_mid[i]) / self.enc_mid[i] * 45
+
+        self.updateRover()
+
+
 
 class StatusFrame(Frame):
     def __init__(self, ocs, parentCtrl):
-        super().__init__(parentCtrl)
+        super().__init__(parentCtrl, borderwidth=2, relief="groove")
         self.parentCtrl = parentCtrl
         self.ocs = ocs
         self.batteryLevels = (15.2, 14.8)
@@ -31,7 +109,10 @@ class StatusFrame(Frame):
         batt.grid(row=0, column=0)
         self.batteryValue.grid(row=0, column=1)    
 
-        amps = Label(self, text="Amps", anchor=W)
+        roboLabel = Label(self, text="Roboclaw", anchor=W, )
+        roboLabel.grid(row=1, column=0)
+
+        amps = Label(self, text="Amps", anchor=W, )
         amps.grid(row=2, column=0)
 
         temp = Label(self, text="Temp", anchor=W)
@@ -44,7 +125,7 @@ class StatusFrame(Frame):
             self.rcAmp.append(Label(self, text="0.0", width=4, bg="orange", borderwidth=2, relief="groove"))
             self.rcTemp.append(Label(self, text="0.0", width=4, bg="orange", borderwidth=2, relief="groove"))
 
-            self.rcLabel[i].grid(row=1, column=col)
+            self.rcLabel[i].grid(row=1, column=col, columnspan=2)
             self.rcAmp[i*2].grid(row=2, column=col)        
             self.rcAmp[i*2 + 1].grid(row=2, column=(col+1))   
             self.rcTemp[i].grid(row=3, column=col, columnspan=2)
@@ -126,7 +207,7 @@ class NodeList(Frame):
 
 class ControlFrame(Frame):
     def __init__(self, ocs, parentCtrl):
-        super().__init__(parentCtrl)
+        super().__init__(parentCtrl, borderwidth=2, relief="groove")
         self.stop = False
         self.parentCtrl = parentCtrl
         self.ocs = ocs
@@ -143,6 +224,10 @@ class ControlFrame(Frame):
         self.runStopBtn.grid(row=0, column=0, sticky=NW)
         self.autoBtn.grid(row=0, column=1, sticky=NE)
         self.nodeList.grid(row=1, column=0, columnspan=2, sticky=W+E)
+
+        # add quit button    
+        button = Button(self, text="Quit", width=10, command=self.ocs.close)
+        button.grid(row=2, column=1, sticky=SE)
 
 
     def onRunStop(self):
@@ -192,6 +277,7 @@ class OCS():
         self.ibC = []
         self.ibC.append((type(RunStop()), partial(self.ctrlFrame.onRunStopMsg)))
         self.ibC.append((type(Status()), partial(self.statusFrame.onStatusMsg)))
+        self.ibC.append((type(Status()), partial(self.roverFrame.onEncoderMsg)))
     
     def buildCtrlFrame(self):
         self.ctrlFrame = ControlFrame(self, self.main)                
@@ -199,12 +285,14 @@ class OCS():
         
 
     def buildMainWindow(self):
-        self.main.title("OSR OCS")    
-        try:
-            # imgIcon = PhotoImage(file="/home/lbarnett/catkin_ws/src/osr-rover-code/osr/scripts/osr.gif")
-            self.main.tk.call('wm', 'iconphoto', self.main._w, PhotoImage(file='/home/lbarnett/catkin_ws/src/osr-rover-code/osr/scripts/osr.gif'))
-            # imgIcon = PhotoImage(file="/home/lbarnett/catkin_ws/src/osr-rover-code/osr/scripts/osr.ico")
-            # self.main.iconbitmap(imgIcon)
+        rosMasterURI = os.getenv("ROS_MASTER_URI")
+
+        if len(rosMasterURI) < 1:
+            rosMasterURI = "(No ROS Master Set)"
+
+        self.main.title("OSR OCS - " + rosMasterURI)    
+        try:            
+            self.main.tk.call('wm', 'iconphoto', self.main._w, PhotoImage(file='/home/lbarnett/catkin_ws/src/osr-rover-code/osr/scripts/osr.gif'))            
         except TclError as err:
             print("Error loading icon")
             print(str(err))
@@ -216,13 +304,12 @@ class OCS():
         
         self.main.grid_columnconfigure(0, weight=1)
         self.main.grid_rowconfigure(0, weight=1)        
+
+        self.roverFrame = RoverFrame(self, self.mainFrame)
+        self.roverFrame.grid(row=0, column=0, sticky=N+E+W)
         
         self.statusFrame = StatusFrame(self, self.mainFrame)
-        self.statusFrame.grid(row=1, column=0, sticky=S+E+W)
-
-        # add quit button    
-        button = Button(self.mainFrame, text="Quit", width=10, command=self.close)
-        button.grid(row=0, column=0, sticky=NW)
+        self.statusFrame.grid(row=1, column=0, sticky=S+E+W)                
 
         self.buildCtrlFrame() 
 
@@ -274,6 +361,7 @@ class rosLoop():
     def setupSubscribers(self):
         self.runStopSub = rospy.Subscriber("/runstop", RunStop, self.queueRosMsg)
         self.status = rospy.Subscriber("/status", Status, self.queueRosMsg)
+        self.encoder = rospy.Subscriber("/encoder", Encoder, self.queueRosMsg)
 
     def queueRosMsg(self, msg):
         self.ocsQueue.put(["Msg", msg])                
