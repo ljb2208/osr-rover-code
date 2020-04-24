@@ -2,9 +2,9 @@
     <machine name="xavier-osr" address="xavier-osr" user="lbarnett" default="true" 
 		env-loader="/home/lbarnett/catkin_ws/src/osr-rover-code/osr_bringup/scripts/setupEnvLocal.sh" />      
 
-    <machine name="rover-osr" address="rover-osr" user="lbarnett" default="true" 
+    <machine name="rover-osr" address="rover-osr" user="lbarnett" default="false" 
 		env-loader="/home/lbarnett/catkin_ws/src/osr-rover-code/osr_bringup/scripts/setupEnvRemote.sh" />      
 
-    <machine name="ocs" address="ocs" user="lbarnett" default="true" 
+    <machine name="ocs" address="ocs" user="lbarnett" default="false" 
 		env-loader="/home/lbarnett/catkin_ws/src/osr-rover-code/osr_bringup/scripts/setupEnvRemoteXPS.sh" />      
 </launch>

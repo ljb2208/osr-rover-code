@@ -38,8 +38,8 @@ class RoverFrame(Frame):
             self.enc_mid[i] = self.enc_len[i] /2
 
     def buildControls(self):
-        self.canv = Canvas(self.parentCtrl)
-        self.canv.grid(row=0, column=0)
+        self.canv = Canvas(self.parentCtrl, background="white")
+        self.canv.grid(row=0, column=0, sticky=NW)
 
     def rotatePoint(self, cx, cy, px, py, sinAngle, cosAngle):
         nx = cx + (px - cx) * cosAngle + (cy - py) * sinAngle
@@ -217,17 +217,21 @@ class ControlFrame(Frame):
         self.buildControls()
 
     def buildControls(self):
-        self.runStopBtn = Button(self, text="Run/Stop", width=10, command=self.onRunStop)
-        self.autoBtn = Button(self, text="Auto Mode", width=10, command=self.onAuto)
+        self.runStopBtn = Button(self, text="Run/Stop", width=8, command=self.onRunStop)
+        self.autoBtn = Button(self, text="Auto Mode", width=8, command=self.onAuto)
+        nodeLabel = Label(self, text="Node List", justify="left")        
         self.nodeList = NodeList(self.ocs, self)        
 
         self.runStopBtn.grid(row=0, column=0, sticky=NW)
         self.autoBtn.grid(row=0, column=1, sticky=NE)
-        self.nodeList.grid(row=1, column=0, columnspan=2, sticky=W+E)
+        nodeLabel.grid(row=1, column=0, sticky=W)
+        self.nodeList.grid(row=2, column=0, columnspan=2, sticky=N+W+E)
 
         # add quit button    
         button = Button(self, text="Quit", width=10, command=self.ocs.close)
-        button.grid(row=2, column=1, sticky=SE)
+        button.grid(row=3, column=1, sticky=SE)
+
+        self.grid_rowconfigure(2, weight=1)
 
 
     def onRunStop(self):
@@ -278,10 +282,7 @@ class OCS():
         self.ibC.append((type(RunStop()), partial(self.ctrlFrame.onRunStopMsg)))
         self.ibC.append((type(Status()), partial(self.statusFrame.onStatusMsg)))
         self.ibC.append((type(Status()), partial(self.roverFrame.onEncoderMsg)))
-    
-    def buildCtrlFrame(self):
-        self.ctrlFrame = ControlFrame(self, self.main)                
-        self.ctrlFrame.grid(row=0, column=1, sticky=NE)
+        
         
 
     def buildMainWindow(self):
@@ -292,7 +293,8 @@ class OCS():
 
         self.main.title("OSR OCS - " + rosMasterURI)    
         try:            
-            self.main.tk.call('wm', 'iconphoto', self.main._w, PhotoImage(file='/home/lbarnett/catkin_ws/src/osr-rover-code/osr/scripts/osr.gif'))            
+            pth = os.path.join(os.path.dirname(os.path.realpath(__file__)), "osr.gif")
+            self.main.tk.call('wm', 'iconphoto', self.main._w, PhotoImage(file=pth))            
         except TclError as err:
             print("Error loading icon")
             print(str(err))
@@ -300,10 +302,7 @@ class OCS():
         self.main.protocol("WM_DELETE_WINDOW", self.close)   
 
         self.mainFrame = Frame(self.main)        
-        self.mainFrame.grid(row=0, column=0, sticky=NSEW)                
-        
-        self.main.grid_columnconfigure(0, weight=1)
-        self.main.grid_rowconfigure(0, weight=1)        
+        self.mainFrame.grid(row=0, column=0, sticky=NSEW)                             
 
         self.roverFrame = RoverFrame(self, self.mainFrame)
         self.roverFrame.grid(row=0, column=0, sticky=N+E+W)
@@ -311,7 +310,13 @@ class OCS():
         self.statusFrame = StatusFrame(self, self.mainFrame)
         self.statusFrame.grid(row=1, column=0, sticky=S+E+W)                
 
-        self.buildCtrlFrame() 
+        self.ctrlFrame = ControlFrame(self, self.main)                
+        self.ctrlFrame.grid(row=0, column=1, sticky=N+E+S, rowspan=2)
+        
+        self.mainFrame.grid_rowconfigure(0, weight=1)   
+
+        self.main.grid_columnconfigure(0, weight=1)
+        self.main.grid_rowconfigure(0, weight=1)   
 
     def close(self):        
         self.running = False
@@ -334,13 +339,17 @@ class OCS():
                          
 
 
-    def runMainLoop(self):
-        while self.running:
+    def runMainLoop(self):        
+        if self.running:
             self.main.update_idletasks()            
             self.main.update()                  
             self.processMessages()      
-        
-        self.main.destroy()        
+            return True
+        else:
+            return False        
+
+    def exitApp(self):
+        self.main.destroy()
 
 
 class rosLoop():
@@ -350,6 +359,7 @@ class rosLoop():
         self.setupPublishers()
         self.setupSubscribers()
         self.setupRosQueueCallbacks()
+        self.running = True
 
     def setupRosQueueCallbacks(self):
         self.rqC = []
@@ -375,39 +385,44 @@ class rosLoop():
                     i[1](rosItem)       
                     break     
 
+    def runMainLoop(self):
+        r = rospy.Rate(20)
+        while not rospy.is_shutdown() and self.running:                        
+            r.sleep()
+            self.process()           
 
-global ocs
 
-def runDashboard(ocsQueue, rosQueue):
-    global ocs
-    ocs = OCS(ocsQueue, rosQueue)
-    ocs.runMainLoop()    
-    gc.collect()
-    rospy.loginfo("runDashboard is exiting")
+global rloop
 
-if __name__ == '__main__':	
-    global ocs
+def runROSThread(ocsQueue, rosQueue):
+    global rloop
+    rloop = rosLoop(ocsQueue, rosQueue)
+    rloop.runMainLoop()
+    
+if __name__ == '__main__':	    
+    global rloop
     rospy.init_node('osr_ocs')
     rospy.loginfo('osr ocs started')    
-
+    
     ocsQueue = queue.Queue()
     rosQueue = queue.Queue()
 
-    rloop = rosLoop(ocsQueue, rosQueue)
+    # start ros threa
+    rosThread = threading.Thread(target=runROSThread, args=(ocsQueue, rosQueue))
+    rosThread.start()
+
+    ocs = OCS(ocsQueue, rosQueue)
+
+    running = True
     
-    ocsThread = threading.Thread(target=runDashboard, args=(ocsQueue, rosQueue))
-    ocsThread.start()
+    while running:
+        running = ocs.runMainLoop()
 
-    r = rospy.Rate(20)
-    while ocsThread.is_alive() and not rospy.is_shutdown():                        
-        r.sleep()
-        rloop.process()           
-
-    if ocsThread.is_alive():
-        ocsQueue.put(("Quit", None))
-        rospy.loginfo("join thread")
-        ocsThread.join()
-
+        if running:
+            running = rosThread.is_alive()
     
+    rloop.running = False    
+    ocs.running = False
+    ocs.exitApp()    
 
     rospy.loginfo('osr ocs exiting....')    
