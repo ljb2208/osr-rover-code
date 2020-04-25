@@ -11,6 +11,7 @@ import math
 import subprocess
 import time
 from osr_msgs.msg import RunStop, Status, Encoder
+from nav_msgs.msg import Odometry
 from functools import partial
 
 class rosLoop():
@@ -33,6 +34,7 @@ class rosLoop():
         self.runStopSub = rospy.Subscriber("/runstop", RunStop, self.queueRosMsg)
         self.status = rospy.Subscriber("/status", Status, self.queueRosMsg)
         self.encoder = rospy.Subscriber("/encoder", Encoder, self.queueRosMsg)
+        self.odom = rospy.Subscriber("/odom", Odometry, self.queueRosMsg)
 
     def queueRosMsg(self, msg):
         self.ocsQueue.put(["Msg", msg])                

@@ -13,10 +13,12 @@ import math
 import subprocess
 import time
 from osr_msgs.msg import RunStop, Status, Encoder
+from nav_msgs.msg import Odometry
 from functools import partial
 from ocs.launch import *
 from ocs.rosctrl import *
 from ocs.frames import *
+from ocs.odomframe import *
 
 FONT_LABEL = "Arial 11 bold"
 
@@ -40,8 +42,7 @@ class OCS():
         self.ibC.append((type(RunStop()), partial(self.ctrlFrame.onRunStopMsg)))
         self.ibC.append((type(Status()), partial(self.statusFrame.onStatusMsg)))
         self.ibC.append((type(Status()), partial(self.roverFrame.onEncoderMsg)))
-        
-        
+        self.ibC.append((type(Odometry()), partial(self.odomFrame.onOCSOdomMsg)))        
 
     def buildMainWindow(self):
         rosMasterURI = os.getenv("ROS_MASTER_URI")
@@ -63,15 +64,18 @@ class OCS():
         self.mainFrame.grid(row=0, column=0, sticky=NSEW)                             
 
         self.roverFrame = RoverFrame(self, self.mainFrame)
-        self.roverFrame.grid(row=0, column=0, sticky=NSEW)
+        self.roverFrame.grid(row=0, column=0, sticky=NE)
+
+        self.odomFrame = OdometryFrame(self, self.mainFrame)
+        self.odomFrame.grid(row=0, column=1, sticky=NSEW)
         
         self.statusFrame = StatusFrame(self, self.mainFrame)
-        self.statusFrame.grid(row=1, column=0, sticky=S+E+W)                
+        self.statusFrame.grid(row=1, column=0, columnspan=2, sticky=S+E+W)                
 
         self.ctrlFrame = ControlFrame(self, self.mainFrame)                
-        self.ctrlFrame.grid(row=0, column=1, sticky=N+E+S, rowspan=2)
+        self.ctrlFrame.grid(row=0, column=2, sticky=N+E+S, rowspan=2)
         
-        self.mainFrame.grid_columnconfigure(0, weight=1)   
+        self.mainFrame.grid_columnconfigure(1, weight=1)   
         self.mainFrame.grid_rowconfigure(0, weight=1)   
 
         self.main.grid_columnconfigure(0, weight=1)
