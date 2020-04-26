@@ -34,6 +34,9 @@ class LaunchFrame(Frame):
         self.launchOptions.append(LaunchOption("Launch OSR", "osr.launch", 0))
         self.launchOptions.append(LaunchOption("Launch Full", "xavier_full.launch", 0))        
         self.launchOptions.append(LaunchOption("Launch XIMEA", "ximea.launch", 1))
+        self.launchOptions.append(LaunchOption("Mount USB", "mount_usb.launch", 2))
+        self.launchOptions.append(LaunchOption("Record", "record.launch", 3))
+        self.launchOptions.append(LaunchOption("Unmount USB", "unmount_usb.launch", 4))
         self.launchItems = {}
         self.buildControls()
         self.ocs.setTimerCallback(self.onTimer)

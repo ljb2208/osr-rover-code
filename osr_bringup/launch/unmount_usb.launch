@@ -1,6 +1,6 @@
 <launch>
 	<include file="$(find osr_bringup)/launch/hardware.machine" />
 
-    <node pkg="osr_bringup" type="scripts/unmount_usb.sh" name="unmount_usb" machine="rover-osr"/>
+    <node pkg="osr_bringup" type="unmount_usb.sh" name="unmount_usb" machine="rover-osr"/>
 
 </launch>

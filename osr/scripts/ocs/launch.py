@@ -30,6 +30,8 @@ class LaunchCommand():
     def stop(self):
         if not self.launchThread.is_alive():
             return
+
+        self.launchThread._stop()
         
 
     def runCallback(self, retCode, exc):        
@@ -84,6 +86,11 @@ class LaunchItem():
             self.launchObj = None
             self.active = False
 
+    def processStopRequest(self):
+        if self.launchObj is None:
+            return
+        
+        self.launchObj.stop()
 
 
     def launchCallback(self, retCode, exc):
