@@ -1,0 +1,7 @@
+<launch>
+	<include file="$(find osr_bringup)/launch/hardware.machine" />
+
+    <node pkg="rosbag" type="record" name="rosbag" machine="rover-osr"
+       args="record -a" cwd="/media/data" />
+
+</launch>
