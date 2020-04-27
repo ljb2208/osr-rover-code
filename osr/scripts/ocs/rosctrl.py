@@ -35,6 +35,7 @@ class rosLoop():
         self.status = rospy.Subscriber("/status", Status, self.queueRosMsg)
         self.encoder = rospy.Subscriber("/encoder", Encoder, self.queueRosMsg)
         self.odom = rospy.Subscriber("/odom", Odometry, self.queueRosMsg)
+        self.visOdom = rospy.Subscriber("/tracking_camera/odom/sample", Odometry, self.queueRosMsg)
 
     def queueRosMsg(self, msg):
         self.ocsQueue.put(["Msg", msg])                

@@ -92,17 +92,17 @@ class RoverFrame(Frame):
         self.buildControls()
         self.drawRover()
 
-    def getEncValues(self):
+    def getEncValues(self):        
         for i in range(len(self.enc_min)):
             self.enc_len[i] = self.enc_max[i] - self.enc_min[i]
-            self.enc_mid[i] = self.enc_len[i] /2
+            self.enc_mid[i] = self.enc_len[i] /2 + self.enc_min[i]            
 
     def buildControls(self):
         self.canv = Canvas(self, background="white", width=200, height=250)
         self.canv.grid(row=0, column=0, sticky=NW)
 
     def rotatePoint(self, cx, cy, px, py, sinAngle, cosAngle):
-        nx = cx + (px - cx) * cosAngle + (cy - py) * sinAngle
+        nx = cx + (px - cx) * cosAngle - (cy - py) * sinAngle
         ny = cy + (py - cy) * cosAngle + (cx - px) * sinAngle        
 
         return nx, ny
@@ -127,7 +127,7 @@ class RoverFrame(Frame):
 
     def updateRover(self):
         for i in range(len(self.wheelCoords)):
-            self.rotateRectangle(self.wheels[i], self.wheelCoords[i], self.enc_angles[i])
+            self.rotateRectangle(self.wheels[i], self.wheelCoords[i], self.enc_angles[i])            
 
     def drawRover(self):
         self.canv.create_rectangle(50, 65, 100, 130, fill="black") # body        
@@ -149,9 +149,10 @@ class RoverFrame(Frame):
 
     def onEncoderMsg(self, msg):
         for i in range(len(self.enc_mid)):
-            self.enc_angles[i] = (msg.abs_enc[i] - self.enc_mid[i]) / self.enc_mid[i] * 45
+            self.enc_angles[i] = (msg.abs_enc[i] - self.enc_mid[i]) / self.enc_mid[i] * 45            
 
         self.updateRover()
+        
 
 
 

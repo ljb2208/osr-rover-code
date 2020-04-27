@@ -23,7 +23,9 @@ FONT_LABEL = "Arial 11 bold"
 
 class OdometryPoint():
     def __init__(self, point, ctrl, lineCtrl = None, visOdom=False):
-        self.point = point
+        self.point_x = point.x * 100 # scale to cms
+        self.point_y = point.y * 100
+        self.point_z = point.z * 100
         self.ctrl = ctrl
         self.lineCtrl = lineCtrl
         self.x = 0
@@ -120,7 +122,7 @@ class OdometryFrame(Frame):
             pt = OdometryPoint((x, y), None)
 
             if self.isNewOdomPoint(pt):
-                self.drawPoint(pt)
+                self.drawPoint(pt, self.priorOdomPoint)
                 self.priorOdomPoint = pt
             
 
@@ -134,19 +136,20 @@ class OdometryFrame(Frame):
 
     def redraw(self):
         self.priorOdomPoint = None
+        self.priorVisOdomPoint = None
 
         for pt in self.odomPoints:
             self.deletePoint(pt)
 
             if self.odom:
-                self.drawPoint(pt)        
+                self.drawPoint(pt, self.priorOdomPoint)        
                 self.priorOdomPoint = pt
 
         for pt in self.visOdomPoints:
             self.deletePoint(pt)
 
             if self.visOdom:
-                self.drawPoint(pt)        
+                self.drawPoint(pt, self.priorVisOdomPoint)        
                 self.priorVisOdomPoint = pt
 
     def getPointOnCanvas(self, x, y):
@@ -156,14 +159,14 @@ class OdometryFrame(Frame):
         return x, y, x - self.pointRadius, y - self.pointRadius, x + self.pointRadius, y + self.pointRadius
 
     def isNewOdomPoint(self, point):
-        if self.priorOdomPoint is not None and point.point[0] == self.priorOdomPoint.point[0] and point.point[1] == self.priorOdomPoint.point[1]:
+        if self.priorOdomPoint is not None and point.point_x == self.priorOdomPoint.point_x and point.point_y == self.priorOdomPoint.point_y:
             return False
 
         self.odomPoints.append(point)
         return True
 
     def isNewVisOdomPoint(self, point):
-        if self.priorVisOdomPoint is not None and point.point[0] == self.priorVisOdomPoint.point[0] and point.point[1] == self.priorVisOdomPoint.point[1]:
+        if self.priorVisOdomPoint is not None and point.point_x == self.priorVisOdomPoint.point_x and point.point_y == self.priorVisOdomPoint.point_y:
             return False
 
         self.visOdomPoints.append(point)
@@ -178,11 +181,11 @@ class OdometryFrame(Frame):
             self.odomCanvas.delete(point.lineCtrl)
             point.lineCtrl = None
 
-    def drawPoint(self, point):
-        point.x, point.y, x1, y1, x2, y2  = self.getPointOnCanvas(point.point[0], point.point[1])        
+    def drawPoint(self, point, priorPoint):
+        point.x, point.y, x1, y1, x2, y2  = self.getPointOnCanvas(point.point_x, point.point_y)        
 
-        if self.connectLines and self.priorOdomPoint is not None:
-            point.lineCtrl = self.odomCanvas.create_line(point.x, point.y, self.priorOdomPoint.x, self.priorOdomPoint.y)
+        if self.connectLines and priorPoint is not None:
+            point.lineCtrl = self.odomCanvas.create_line(point.x, point.y, priorPoint.x, priorPoint.y)
 
         color = "blue"
 
@@ -199,14 +202,14 @@ class OdometryFrame(Frame):
         topic = msg._connection_header['topic']
 
         if topic == "/odom":
-            point = OdometryPoint(msg.PoseWithCovariance.Pose.Point, None)
+            point = OdometryPoint(msg.pose.pose.position, None)
             if self.isNewOdomPoint(point) and self.odom:
-                self.drawPoint(point)
+                self.drawPoint(point, self.priorOdomPoint)
                 self.priorOdomPoint = point
         else:
-            point = OdometryPoint(msg.PoseWithCovariance.Pose.Point, None, visOdom=True)
+            point = OdometryPoint(msg.pose.pose.position, None, visOdom=True)
             if self.isNewVisOdomPoint(point) and self.visOdom:
-                self.drawPoint(point)
+                self.drawPoint(point, self.priorVisOdomPoint)
                 self.priorVisOdomPoint = point
         
 

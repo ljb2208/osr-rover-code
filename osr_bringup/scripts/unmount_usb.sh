@@ -1,3 +1,5 @@
 #!/bin/sh
 
-umount /media/data
+if grep -qs '/media/data ' /proc/mounts; then
+    umount /media/data
+fi

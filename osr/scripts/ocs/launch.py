@@ -22,24 +22,24 @@ class LaunchCommand():
         self.launchFile = launchFile
         self.cb = cb
         self.launchThread = None
+        self.pid = None
 
     def launch(self):
         self.launchThread = threading.Thread(target=self.runLaunch)
         self.launchThread.start()
 
     def stop(self):
-        if not self.launchThread.is_alive():
+        if not self.launchThread.is_alive() or self.pid is None:
             return
-
-        self.launchThread._stop()
+        
+        try:            
+            self.pid.terminate()
+            self.runCallback(self.pid.returncode, None)
+        except Exception as exc:
+            self.runCallback(0, exc)
         
 
-    def runCallback(self, retCode, exc):        
-        rospy.loginfo("cb: " + str(retCode))
-
-        if exc is not None:
-            rospy.loginfo("exception: " + str(exc))
-
+    def runCallback(self, retCode, exc):                
         self.launchThread = None
         self.cb(retCode, exc)
 
@@ -47,10 +47,11 @@ class LaunchCommand():
         retCode = -1
 
         try:
-            retCode = subprocess.call(["roslaunch", "osr_bringup", self.launchFile], bufsize=4096)
-            self.runCallback(retCode, None)
+            self.pid = subprocess.Popen(["roslaunch", "osr_bringup", self.launchFile], bufsize=4096)            
+            self.pid.wait()
+            self.runCallback(self.pid.returncode, None)                        
         except Exception as exc:
-            self.runCallback(retCode, exc)
+            self.runCallback(retCode, exc)        
 
 class LaunchItem():
     def __init__(self, btn, launchFile, launchObj):
@@ -69,34 +70,27 @@ class LaunchItem():
             self.active = True
             self.launchObj.launch()
         else:
-            self.btn["background"] = "grey"
-            self.btn["activebackground"] = "grey"
+            self.launchObj.stop()            
             self.launchObj = None
 
-    def updateStatus(self):
+    def updateStatus(self):        
         color = "grey"
         if self.active and self.launchObj is None:
             if self.exc is not None:
                 color = "red"
-            elif self.retCode != 0:
-                color = "red"
-        
+            elif self.retCode != 0 and self.retCode is not None:
+                color = "red"            
+            
             self.btn["background"] = color
             self.btn["activebackground"] = color
             self.launchObj = None
             self.active = False
 
-    def processStopRequest(self):
-        if self.launchObj is None:
-            return
-        
-        self.launchObj.stop()
-
 
     def launchCallback(self, retCode, exc):
         self.retCode = retCode
         self.exc = exc
-        self.launchObj = None
+        self.launchObj = None        
 
 class LaunchOption():
     def __init__(self, desc, launchFile, groupId):

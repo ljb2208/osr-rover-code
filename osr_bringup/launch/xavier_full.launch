@@ -12,6 +12,7 @@
 
 	<include file="$(find osr_description)/launch/osr_desc.launch" /> 
 	
+    <include file="$(find ximea_camera)/launch/camera2.launch" />
 
 	<include file="$(find rtabmap_ros)/launch/rtabmap.launch">
             <arg name="rtabmap_args"       value="--delete_db_on_start"/>

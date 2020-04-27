@@ -2,6 +2,9 @@
 	<include file="$(find osr_bringup)/launch/hardware.machine" />
 
     <node pkg="rosbag" type="record" name="rosbag" machine="rover-osr"
-       args="record -a" cwd="/media/data" />
+       args="record -a -o /media/data/ diagnostics encoder joy joystick odom robot_commands runstop status tf tf_static       
+       tracking_camera/accel/imu_info tracking_camera/accel/sample tracking_camera/gyro/imu_info tracking_camera/gyro/sample 
+       tracking_camera/odom/sample "
+       />
 
 </launch>

@@ -41,7 +41,7 @@ class OCS():
         self.ibC = []
         self.ibC.append((type(RunStop()), partial(self.ctrlFrame.onRunStopMsg)))
         self.ibC.append((type(Status()), partial(self.statusFrame.onStatusMsg)))
-        self.ibC.append((type(Status()), partial(self.roverFrame.onEncoderMsg)))
+        self.ibC.append((type(Encoder()), partial(self.roverFrame.onEncoderMsg)))
         self.ibC.append((type(Odometry()), partial(self.odomFrame.onOCSOdomMsg)))        
 
     def buildMainWindow(self):
