@@ -1,0 +1,8 @@
+plugin_blacklist: []
+
+plugin_whitelist:
+#- 'sys_*'
+- 'imu'
+- 'sys_time'
+- 'sys_status'
+- 'command'

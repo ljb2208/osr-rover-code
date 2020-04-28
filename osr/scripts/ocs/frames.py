@@ -16,6 +16,7 @@ from osr_msgs.msg import RunStop, Status, Encoder
 from functools import partial
 from ocs.launch import *
 from ocs.rosctrl import *
+from ocs.machine import *
 
 FONT_LABEL = "Arial 11 bold"
 
@@ -87,7 +88,7 @@ class RoverFrame(Frame):
         self.wheels = []        
         self.wheelWidth = 15
         self.wheelHeight = 30
-        self.wheelCoords = [(20, 20), (20, 145), (115, 20), (115,145)]
+        self.wheelCoords = [(115,145), (115, 20), (20, 145), (20, 20)]
 
         self.buildControls()
         self.drawRover()
@@ -145,11 +146,13 @@ class RoverFrame(Frame):
         for w in self.wheelCoords:
             x = w[0]
             y = w[1]
-            self.wheels.append(self.canv.create_polygon(x, y, x+self.wheelWidth, y, x + self.wheelWidth, y+self.wheelHeight, x, y+self.wheelHeight, fill="black")) # left front wheel
+
+            self.wheels.append(self.canv.create_polygon(x, y, x+self.wheelWidth, y, x + self.wheelWidth, y+self.wheelHeight, x, y+self.wheelHeight, fill="black")) # left front wheel            
 
     def onEncoderMsg(self, msg):
         for i in range(len(self.enc_mid)):
             self.enc_angles[i] = (msg.abs_enc[i] - self.enc_mid[i]) / self.enc_mid[i] * 45            
+            rospy.loginfo("Angle: " + str(i) + " : " + str(self.enc_angles[i]))
 
         self.updateRover()
         
@@ -164,12 +167,40 @@ class StatusFrame(Frame):
         self.batteryLevels = (15.2, 14.8)
         self.rcTempLevels = (35, 40)
         self.rcAmpLevels = (5, 10)
+        self.timerCount = 0
+        self.machineList = [Machine("xavier-osr", "lbarnett"), Machine("rover-osr", "lbarnett")]
+        self.machineLabel = []
+        self.machineButton = []
+        self.machineStatus = []
 
         self.rcLabel = []
         self.rcAmp = []
         self.rcTemp = []
         
-        self.buildControls()            
+        self.buildControls()          
+        self.ocs.setTimerCallback(self.onTimer)        
+
+
+    def onTimer(self):
+        self.timerCount += 1
+
+        for i in range(len(self.machineList)):
+            if self.machineStatus[i] != self.machineList[i].alive:
+                color = "red"
+                if self.machineList[i].alive == True:
+                    color = "green"
+                
+                self.machineLabel[i]["background"] = color
+                self.machineLabel[i]["activebackground"] = color
+                self.machineStatus[i] = self.machineList[i].alive
+
+        if self.timerCount == 2:
+            for machine in self.machineList:
+                machine.isAlive()            
+
+        if self.timerCount == 10:
+            self.timerCount = 0
+
     
     def buildControls(self):        
         batt = Label(self, text="Battery", font=FONT_LABEL)
@@ -199,6 +230,25 @@ class StatusFrame(Frame):
             self.rcTemp[i].grid(row=3, column=col, columnspan=2)
 
             col += 2       
+
+        self.buildMachineCtrls()        
+
+    def buildMachineCtrls(self):
+        self.compFrame = Frame(self)
+        self.compFrame.grid(row=0, column=12, sticky="NE", rowspan=3)
+
+        i = 0
+        for machine in self.machineList:
+            lbl = Label(self.compFrame, text = machine.machineName, width=6)
+            btn = Button(self.compFrame, text="Shutdown", command=machine.shutDown)
+            lbl.grid(row=i, column=0)
+            btn.grid(row=i, column=1)
+            self.machineLabel.append(lbl)
+            self.machineButton.append(btn)
+            self.machineStatus.append(None)
+            i += 1
+
+
 
     def updateValue(self, ctrl, value, valueLevels):
         ctrl["text"]= str(value)
@@ -242,7 +292,10 @@ class NodeList(Frame):
         self.nodes = list()        
         self.requiredNodes = ("/joystick", "/motorcontroller", "/osr_ocs")            
 
-        self.buildControls()        
+        self.buildControls()  
+        self.timerCount = 0
+
+        self.ocs.setTimerCallback(self.onTimer)      
     
     def buildControls(self):        
         self.nodeListCtrl = Listbox(self, listvariable=self.nodes)
@@ -271,6 +324,14 @@ class NodeList(Frame):
                 index =  self.nodeListCtrl.size()
                 self.nodeListCtrl.insert(index, rn)                            
                 self.nodeListCtrl.itemconfigure(index, background="red")            
+
+
+    def onTimer(self):
+        self.timerCount += 1
+
+        if (self.timerCount == 10):
+            self.getRunningNodes()
+            self.timerCount = 0
 
 
 class ControlFrame(Frame):
