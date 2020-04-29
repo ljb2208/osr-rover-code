@@ -1,5 +1,5 @@
 #!/bin/sh
 
 if grep -qs '/media/data ' /proc/mounts; then
-    umount /media/data
+    sudo umount /media/data
 fi

@@ -101,7 +101,11 @@ class RoverFrame(Frame):
     def buildControls(self):
         self.canv = Canvas(self, background="white", width=200, height=250)
         self.canv.grid(row=0, column=0, sticky=NW)
+        self.machineFrame = MachineFrame(self, self.ocs)
+        self.machineFrame.grid(row=1, column=0, sticky=NSEW)
 
+        self.grid_rowconfigure(1, weight="1")
+        
     def rotatePoint(self, cx, cy, px, py, sinAngle, cosAngle):
         nx = cx + (px - cx) * cosAngle - (cy - py) * sinAngle
         ny = cy + (py - cy) * cosAngle + (cx - px) * sinAngle        
@@ -168,39 +172,13 @@ class StatusFrame(Frame):
         self.rcTempLevels = (35, 40)
         self.rcAmpLevels = (5, 10)
         self.timerCount = 0
-        self.machineList = [Machine("xavier-osr", "lbarnett"), Machine("rover-osr", "lbarnett")]
-        self.machineLabel = []
-        self.machineButton = []
-        self.machineStatus = []
-
+        
         self.rcLabel = []
         self.rcAmp = []
         self.rcTemp = []
         
-        self.buildControls()          
-        self.ocs.setTimerCallback(self.onTimer)        
-
-
-    def onTimer(self):
-        self.timerCount += 1
-
-        for i in range(len(self.machineList)):
-            if self.machineStatus[i] != self.machineList[i].alive:
-                color = "red"
-                if self.machineList[i].alive == True:
-                    color = "green"
-                
-                self.machineLabel[i]["background"] = color
-                self.machineLabel[i]["activebackground"] = color
-                self.machineStatus[i] = self.machineList[i].alive
-
-        if self.timerCount == 2:
-            for machine in self.machineList:
-                machine.isAlive()            
-
-        if self.timerCount == 10:
-            self.timerCount = 0
-
+        self.buildControls()                    
+    
     
     def buildControls(self):        
         batt = Label(self, text="Battery", font=FONT_LABEL)
@@ -229,25 +207,7 @@ class StatusFrame(Frame):
             self.rcAmp[i*2 + 1].grid(row=2, column=(col+1))   
             self.rcTemp[i].grid(row=3, column=col, columnspan=2)
 
-            col += 2       
-
-        self.buildMachineCtrls()        
-
-    def buildMachineCtrls(self):
-        self.compFrame = Frame(self)
-        self.compFrame.grid(row=0, column=12, sticky="NE", rowspan=3)
-
-        i = 0
-        for machine in self.machineList:
-            lbl = Label(self.compFrame, text = machine.machineName, width=6)
-            btn = Button(self.compFrame, text="Shutdown", command=machine.shutDown)
-            lbl.grid(row=i, column=0)
-            btn.grid(row=i, column=1)
-            self.machineLabel.append(lbl)
-            self.machineButton.append(btn)
-            self.machineStatus.append(None)
-            i += 1
-
+            col += 2           
 
 
     def updateValue(self, ctrl, value, valueLevels):
@@ -290,7 +250,7 @@ class NodeList(Frame):
         self.parentCtrl = parentCtrl
         self.ocs = ocs
         self.nodes = list()        
-        self.requiredNodes = ("/joystick", "/motorcontroller", "/osr_ocs")            
+        self.requiredNodes = ("/joystick", "/motor_controller", "/osr_ocs", "/joy")            
 
         self.buildControls()  
         self.timerCount = 0
