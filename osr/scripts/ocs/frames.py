@@ -156,7 +156,7 @@ class RoverFrame(Frame):
     def onEncoderMsg(self, msg):
         for i in range(len(self.enc_mid)):
             self.enc_angles[i] = (msg.abs_enc[i] - self.enc_mid[i]) / self.enc_mid[i] * 45            
-            rospy.loginfo("Angle: " + str(i) + " : " + str(self.enc_angles[i]))
+            # rospy.loginfo("Angle: " + str(i) + " : " + str(self.enc_angles[i]))
 
         self.updateRover()
         

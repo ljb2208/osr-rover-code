@@ -1,0 +1,8 @@
+<launch>
+	<include file="$(find osr_bringup)/launch/hardware.machine" />	
+	
+
+	<!-- <include file="$(find realsense2_camera)/launch/rs_t265.launch"/> -->
+	<include file="$(find osr_description)/launch/osr_desc.launch" />     	
+</launch>
+	
