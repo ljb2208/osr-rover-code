@@ -10,6 +10,8 @@
 	<arg name="log_output" default="screen" />
 	<arg name="fcu_protocol" default="v2.0" />
 	<arg name="respawn_mavros" default="true" />
+	<arg name="pluginlists_yaml" value="$(find osr_bringup)/launch/imu_pluginlists.yaml" />
+	<arg name="config_yaml" value="$(find osr_bringup)/launch/imu_config.yaml" />
 
 	<node pkg="mavros" type="mavros_node" name="mavros" required="$(eval not respawn_mavros)" clear_params="true" output="$(arg log_output)" respawn="$(arg respawn_mavros)" machine="rover-osr">
 		<param name="fcu_url" value="$(arg fcu_url)" />
