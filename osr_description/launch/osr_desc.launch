@@ -22,4 +22,6 @@
 
   <node name="camera_to_base" pkg="tf" type="static_transform_publisher" args="-0.14 0 -0.39 0 0 0 tracking_camera_pose_frame base_link 20">
     </node> 
+  <node name="imu_to_base" pkg="tf" type="static_transform_publisher" args="-0.14 0 -0.45 0 0 0 imu_pose_frame base_link 20">
+    </node> 
 </launch>

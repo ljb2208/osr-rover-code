@@ -29,9 +29,28 @@ global wheel_track
 
 global base_frame
 
+global twist_cv
+global pose_cv
+
 x = 0.0
 y = 0.0
 th = 0.0
+
+twist_cv = [[0.001, 0, 0, 0, 0, 0],
+            [0, 0.001, 0, 0, 0, 0],
+            [0, 0, 0.001, 0, 0, 0],
+            [0, 0, 0, 0.02, 0, 0],
+            [0, 0, 0, 0, 0.02, 0],
+            [0, 0, 0, 0, 0, 0.02]]
+
+
+pose_cv = [[0.001, 0, 0, 0, 0, 0],
+            [0, 0.001, 0, 0, 0, 0],
+            [0, 0, 0.001, 0, 0, 0],
+            [0, 0, 0, 0.02, 0, 0],
+            [0, 0, 0, 0, 0.02, 0],
+            [0, 0, 0, 0, 0, 0.02]]
+
 
 
 # meters per tick based on 152 mm wheel diameter and 18140.79 ticks per revolution
@@ -53,6 +72,8 @@ def calculateOdometry():
     global y
     global th
     global d4
+    global twist_cv
+    global pose_cv
 
     global pub
     global odomBroadcaster
@@ -62,7 +83,7 @@ def calculateOdometry():
 
     d_left = mtp * (encs[1] - encs_prev[1])
     d_right = mtp * (encs[4] - encs_prev[4])
-    rospy.loginfo("d left: " + str(d_left) + " d right: " + str(d_right))
+    # rospy.loginfo("d left: " + str(d_left) + " d right: " + str(d_right))
 
     # rospy.loginfo("d_left: " + str(d_left) + " d_right: " + str(d_right) + " dt: " + str(dt) + " 1:" + str(encs[1]) + " 1 pre: " + str(encs_prev[1]) +
     #     " 4: " + str(encs[4]) + " 4 pre: " + str(encs_prev[4]))
@@ -118,8 +139,8 @@ def calculateOdometry():
 
     vth = d_theta /dt
 
-    rospy.loginfo("x orig: " + str(x_orig) + " y orig: " + str(y_orig) + " d_theta: " + str(d_theta) + " dist: " + str(dist))
-    rospy.loginfo("x new: " + str(x_new) + " y new: " + str(y_new) + " theta: " + str(th) + " r: " + str(r))
+    # rospy.loginfo("x orig: " + str(x_orig) + " y orig: " + str(y_orig) + " d_theta: " + str(d_theta) + " dist: " + str(dist))
+    # rospy.loginfo("x new: " + str(x_new) + " y new: " + str(y_new) + " theta: " + str(th) + " r: " + str(r))
 
     quaternion = Quaternion()
     quaternion.x  = 0.0
@@ -142,11 +163,14 @@ def calculateOdometry():
     odom.pose.pose.position.x = x_ros
     odom.pose.pose.position.y = y_ros
     odom.pose.pose.position.z = 0
+    odom.pose.covariance = pose_cv
     odom.pose.pose.orientation = quaternion
     odom.twist.twist.linear.x = vx_ros
     odom.twist.twist.linear.y = vy_ros
     odom.twist.twist.linear.z = 0
     odom.twist.twist.angular.z = vth
+    odom.twist.covariance = twist_cv
+
 
     pub.publish(odom)
 
@@ -172,6 +196,9 @@ if __name__ == '__main__':
     global pub	
     global odomBroadcaster
     global enc_valid
+
+
+
 
     rospy.init_node('osr_odometry')
     rospy.loginfo("Starting the osr odometry node")	
