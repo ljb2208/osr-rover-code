@@ -5,8 +5,7 @@
     <arg name="use_rtabmapviz"            default="false"/>
     
 
-	<include file="$(find realsense2_camera)/launch/rs_t265.launch"/>
-	<include file="$(find realsense2_camera)/launch/rs_camera.launch"/>	    
+	<include file="$(find osr_bringup)/launch/rs.launch"/>   
 
 	<include file="$(find osr_bringup)/launch/osr.launch"/>	
 

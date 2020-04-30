@@ -1,27 +1,17 @@
-<launch>
-	<param name="/baud_rate" type="int" value="115200" />
-	<param name="/motor_controller_device" type="string" value="/dev/serial0" />
-	<param name="/motor_controller_addresses" type="string" value="128,129,130,131,132" />
+<launch>	
+	<include file="$(find osr_bringup)/launch/hardware.machine" />	
 	
-	<param name="/enc_min" type="string" value="155,90,175,424" />
-	<param name="/enc_max" type="string" value="1321,1244,1366,1565" />
-	
-	<param name="/qpps" type="string" value="0,0,0,0" />
-	<param name="/accel" type="string" value="0,0,0,0" />
-	<param name="battery_low" type="int" value="11" />
-	<param name="battery_high" type="int" value="18" />
-	<param name="mech_dist" type="string" value="7.254,10.5,10.5,10.073" />
+	<arg name="external_manager"	default="true" />
+	<arg name="manager"             default="realsense2_camera_manager"/>
+	<arg name="required"             default="false"/>
 
-	<arg name="use_rviz"                  default="false"/>
-    <arg name="use_rtabmapviz"            default="true"/>
-    
+	<node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" output="screen" required="$(arg required)"/>
 
-	<include file="$(find realsense2_camera)/launch/rs_t265.launch"/>
-	<include file="$(find realsense2_camera)/launch/rs_camera.launch"/>	
-
-    
-
-
-
+	<include file="$(find realsense2_camera)/launch/rs_t265.launch">
+		<arg name="external_manager"               value="$(arg external_manager)"/>
+	</include>
+	<include file="$(find realsense2_camera)/launch/rs_camera.launch">
+		<arg name="external_manager"               value="$(arg external_manager)"/>
+	</include>
 </launch>
 	
