@@ -6,6 +6,7 @@ from geometry_msgs.msg import Point, Pose, Quaternion, Twist, Vector3
 import rospy
 import tf
 import math
+import numpy
 
 
 global pub
@@ -36,21 +37,8 @@ x = 0.0
 y = 0.0
 th = 0.0
 
-twist_cv = [[0.001, 0, 0, 0, 0, 0],
-            [0, 0.001, 0, 0, 0, 0],
-            [0, 0, 0.001, 0, 0, 0],
-            [0, 0, 0, 0.02, 0, 0],
-            [0, 0, 0, 0, 0.02, 0],
-            [0, 0, 0, 0, 0, 0.02]]
-
-
-pose_cv = [[0.001, 0, 0, 0, 0, 0],
-            [0, 0.001, 0, 0, 0, 0],
-            [0, 0, 0.001, 0, 0, 0],
-            [0, 0, 0, 0.02, 0, 0],
-            [0, 0, 0, 0, 0.02, 0],
-            [0, 0, 0, 0, 0, 0.02]]
-
+twist_cv = numpy.diag([0.001, 0.001, 0.001, 0.1, 0.1, 0.1]).ravel()
+pose_cv = numpy.diag([0.001, 0.001, 0.001, 0.1, 0.1, 0.1]).ravel()
 
 
 # meters per tick based on 152 mm wheel diameter and 18140.79 ticks per revolution
@@ -196,12 +184,14 @@ if __name__ == '__main__':
     global pub	
     global odomBroadcaster
     global enc_valid
-
-
+    global base_frame
 
 
     rospy.init_node('osr_odometry')
     rospy.loginfo("Starting the osr odometry node")	
+
+    base_frame = rospy.get_param("/odometry/base_frame_id", "base_footprint")
+
     enc_sub  = rospy.Subscriber("/encoder", Encoder, enc_callback)	
     pub = rospy.Publisher("/odom", Odometry, queue_size = 1)
     odomBroadcaster = tf.TransformBroadcaster() 

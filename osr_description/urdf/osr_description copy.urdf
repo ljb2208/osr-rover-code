@@ -20,20 +20,20 @@
 
   <joint name="imu_joint" type="fixed">
     <axis xyz="0 1 0" />
-    <origin xyz="0.12 0 0.50" rpy="0 0 0"/>
+    <origin xyz="0.14 0 0.50" rpy="0 0 0"/>
     <parent link="base_link"/>
     <child link="imu_link"/>
   </joint> 
 
   <link name="base_link">    
     <collision name="body_collision">
-      <origin rpy="1.5708 0 3.1459" xyz="-0.06131  -0.25841 -0.06"/>
+      <origin rpy="1.57079 -0.0741   0" xyz="0.06131  0.25841 -0.36404"/>
       <geometry>
         <mesh filename="package://osr_description/meshes/body_col.STL" scale="1 1 1"/>
       </geometry>
     </collision>
     <visual name="body_visual">
-      <origin rpy="1.5708 0 3.1459" xyz="-0.06131 -0.25841 -0.06"/>
+      <origin rpy="1.57079 -0.0741   0" xyz="0.06131  0.25841 -0.36404"/>
       <geometry>
         <mesh filename="package://osr_description/meshes/body.STL" scale="1 1 1"/>
       </geometry>

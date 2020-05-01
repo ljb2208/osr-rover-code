@@ -14,6 +14,7 @@ import subprocess
 import time
 from osr_msgs.msg import RunStop, Status, Encoder
 from nav_msgs.msg import Odometry
+from geometry_msgs.msg import PoseWithCovarianceStamped
 from functools import partial
 from ocs.launch import *
 from ocs.rosctrl import *
@@ -43,6 +44,7 @@ class OCS():
         self.ibC.append((type(Status()), partial(self.statusFrame.onStatusMsg)))
         self.ibC.append((type(Encoder()), partial(self.roverFrame.onEncoderMsg)))
         self.ibC.append((type(Odometry()), partial(self.odomFrame.onOCSOdomMsg)))        
+        self.ibC.append((type(PoseWithCovarianceStamped()), partial(self.odomFrame.onOCSGeometryMsg)))
 
     def buildMainWindow(self):
         rosMasterURI = os.getenv("ROS_MASTER_URI")

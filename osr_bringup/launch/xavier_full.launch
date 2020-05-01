@@ -7,9 +7,7 @@
 
 	<include file="$(find osr_bringup)/launch/rs.launch"/>   
 
-	<include file="$(find osr_bringup)/launch/osr.launch"/>	
-
-	<include file="$(find osr_description)/launch/osr_desc.launch" /> 
+	<include file="$(find osr_bringup)/launch/osr.launch"/>		
 	
     <include file="$(find ximea_camera)/launch/camera2.launch" />
 

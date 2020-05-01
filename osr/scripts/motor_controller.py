@@ -68,6 +68,7 @@ if __name__ == "__main__":
 		while mutex:
 			time.sleep(0.001)
 		mutex = True
+		enc.header.stamp = rospy.Time.now()
 		enc.abs_enc = motorcontrollers.getCornerEnc()
 		enc.rel_enc = motorcontrollers.getDriveEnc()		
 		# enc.header.stamp = rospy.Time.now() 

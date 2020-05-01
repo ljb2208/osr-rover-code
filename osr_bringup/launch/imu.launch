@@ -19,9 +19,11 @@
 		<param name="target_system_id" value="$(arg tgt_system)" />
 		<param name="target_component_id" value="$(arg tgt_component)" />
 		<param name="fcu_protocol" value="$(arg fcu_protocol)" />
+		<param name="frame_id" value="imu_link" />
+		<param name="imu/frame_id" value="imu_link" />
 
 		<!-- load blacklist, config -->
 		<rosparam command="load" file="$(arg pluginlists_yaml)" />
 		<rosparam command="load" file="$(arg config_yaml)" />
-	</node>
+	</node>	
 </launch>
