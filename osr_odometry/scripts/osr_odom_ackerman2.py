@@ -85,9 +85,9 @@ class Odometry2():
 
         return dt
 
-    def calculateTurnRadius(self, dth, dLeft, dRight):
+    def calculateTurnRadius(self, dLeft, dRight):
          # calculate radius of turn
-        if (dth != 0 and dLeft != 0 and dRight != 0):
+        if dLeft != 0 or dRight != 0:
             lv = self.d4 + dLeft / dRight * self.d4
             # print ("lv: " + str(lv))
             r = lv / (1  - (dLeft / dRight))
@@ -116,9 +116,9 @@ class Odometry2():
         dLeft = self.mtp * (encs[1] - self.priorEncs[1])
         dRight = self.mtp * (encs[4] - self.priorEncs[4])
     
-        dth = (dRight - dLeft) / self.wheelTrack
+        # dth = (dRight - dLeft) / self.wheelTrack
 
-        radius, dTheta = self.calculateTurnRadius(dth, dLeft, dRight)
+        radius, dTheta = self.calculateTurnRadius(dLeft, dRight)
 
         # calculate centre of turn circle
         xOrig = self.x + radius * math.cos(self.th)
