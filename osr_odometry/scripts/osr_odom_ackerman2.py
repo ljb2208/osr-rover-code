@@ -4,7 +4,7 @@ from osr_msgs.msg import Joystick, Commands, Encoder, RunStop
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Point, Pose, Quaternion, Twist, Vector3
 import rospy
-import tf
+# import tf
 import math
 import numpy
 
@@ -36,22 +36,22 @@ class Odometry2():
         self.calculateOdometry(message)
 
     def isValid(self, message):
-        dencLeft = message.rel_enc[1] - self.priorEncs[1]
-        dencRight = message.rel_enc[4] - self.priorEncs[4]
+        dencLeft = abs(message.rel_enc[1] - self.priorEncs[1])
+        dencRight = abs(message.rel_enc[4] - self.priorEncs[4])
 
         dt = self.getElapsedTime(message.header.stamp)
 
         if (dencLeft/dt) > self.maxTickPerSec:
-            rospy.logwarn("Invalid relative encoder value. No odom calculated")
+            rospy.logwarn("Invalid relative encoder value on left wheel. No odom calculated")
             return False
         
         if (dencRight/dt) > self.maxTickPerSec:
-            rospy.logwarn("Invalid relative encoder value. No odom calculated")
+            rospy.logwarn("Invalid relative encoder value on right wheel. No odom calculated")
             return False
 
         return True
 
-    def publishTransform(self, x, y, quaternion, timestamp):
+    def publishTransform(self, x, y, quaternion, timestamp):        
         self.odomBroadcaster.sendTransform(
             (x, y, 0),
             (quaternion.x, quaternion.y, quaternion.z, quaternion.w),
@@ -86,8 +86,10 @@ class Odometry2():
         return dt
 
     def calculateTurnRadius(self, dLeft, dRight):
+        dlr = dLeft - dRight
+
          # calculate radius of turn
-        if dLeft != 0 or dRight != 0:
+        if dlr != 0 and dLeft != 0 and dRight != 0:
             lv = self.d4 + dLeft / dRight * self.d4
             # print ("lv: " + str(lv))
             r = lv / (1  - (dLeft / dRight))
@@ -154,7 +156,9 @@ class Odometry2():
         quaternion = self.getQuaternion(self.th)
         
         self.publishTransform(xRos, yRos, quaternion, currentTime)
-        self.publishOdomMessage(xRos, yRos, vxRos, vyRos, vth, quaternion, currentTime)        
+        self.publishOdomMessage(xRos, yRos, vxRos, vyRos, vth, quaternion, currentTime)   
+
+        self.priorEncs = encs    
         
 
     def getQuaternion(self, th):

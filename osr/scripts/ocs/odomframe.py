@@ -86,7 +86,7 @@ class OdometryFrame(Frame):
         clVisOdom = Checkbutton(self.controlsFrame, text="Vis. Odom", variable=self.visOdomVar, command=self.toggleVisOdom)
         clKfOdom = Checkbutton(self.controlsFrame, text="KF. Odom", variable=self.kfOdomVar, command=self.toggleKfOdom)
 
-        btn = Button(self.controlsFrame, text="Test", command=self.testButton)
+        btn = Button(self.controlsFrame, text="Clear All", command=self.clearOdomPoints)
         zinBtn.grid(row=0, column=0, sticky="NE")
         zoutBtn.grid(row=1, column=0, sticky="NE")
         clCheck.grid(row=2, column=0, sticky="NW")
@@ -128,18 +128,28 @@ class OdometryFrame(Frame):
 
         self.redraw()
     
-    def testButton(self):
-        random.seed()
 
-        # generate test points
-        for i in range(10):
-            x = i * 10
-            y = 0
-            pt = OdometryPoint((x, y), None)
+    def clearOdomPoints(self):
 
-            if self.isNewPoint(pt, self.priorOdomPoint, self.odomPoints):
-                self.drawPoint(pt, self.priorOdomPoint)
-                self.priorOdomPoint = pt
+        for pt in self.odomPoints:
+            self.deletePoint(pt)
+
+        self.odomPoints.clear()
+        self.priorOdomPoint = None
+
+        for pt in self.visOdomPoints:
+            self.deletePoint(pt)
+
+        self.visOdomPoints.clear()
+        self.priorVisOdomPoint = None
+
+        for pt in self.kfOdomPoints:
+            self.deletePoint(pt)
+
+        self.kfOdomPoints.clear()
+        self.priorKfOdomPoint = None
+        
+        self.redraw()
             
 
     def zoomIn(self):
