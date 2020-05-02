@@ -15,7 +15,7 @@
 	<param name="mech_dist" type="string" value="7.254,10.5,10.5,10.073" />
 	
 	<!-- Nodes to run the Open Source Rover -->
-	<node name="odometry" pkg="osr_odometry" type="osr_odom_ackerman.py" respawn="true" machine="rover-osr">
+	<node name="odometry" pkg="osr_odometry" type="osr_odom_ackerman2.py" respawn="true" machine="rover-osr">
 		<param name="base_frame_id" type="string" value="base_link" />
 	</node>
 	<node name="motor_controller" pkg="osr" type="motor_controller.py" respawn="true" machine="rover-osr"/>

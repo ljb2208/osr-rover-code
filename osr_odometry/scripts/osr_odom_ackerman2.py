@@ -9,17 +9,17 @@ import math
 import numpy
 
 class Odometry2():
-    def __init__(self, baseFrame):
+    def __init__(self, baseFrame, wheelTrack, mpt, d4, maxTickPerSec):
         self.encValid = False
         self.priorTime = rospy.Time.now()
         self.priorEncs = [0,0,0,0,0,0]
-        self.mtp = 0.000026322
+        self.mpt = mpt
         
         # distance between wheels
-        self.wheelTrack = 0.455
-        self.d4 = 0.2559
+        self.wheelTrack = wheelTrack
+        self.d4 = d4
         self.baseFrame = baseFrame
-        self.maxTickPerSec = 8000
+        self.maxTickPerSec = maxTickPerSec
 
         self.x = 0.0
         self.y = 0.0
@@ -113,8 +113,8 @@ class Odometry2():
 
         dt = self.getElapsedTime(currentTime, save=True)
 
-        dLeft = self.mtp * (encs[1] - self.priorEncs[1])
-        dRight = self.mtp * (encs[4] - self.priorEncs[4])
+        dLeft = self.mpt * (encs[1] - self.priorEncs[1])
+        dRight = self.mpt * (encs[4] - self.priorEncs[4])
     
         # dth = (dRight - dLeft) / self.wheelTrack
 
@@ -173,8 +173,12 @@ if __name__ == '__main__':
     rospy.loginfo("Starting the osr odometry2 node")	
 
     baseFrame = rospy.get_param("/odometry/base_frame_id", "base_link")
+    mpt = rospy.get_param("/odometry/mpt", 0.000026322)
+    wheelTrack = rospy.get_param("/odometry/wheel_track", 0.455)
+    d4 = rospy.get_param("/odometry/d4", 0.2559)
+    maxTickPerSec = rospy.get_param("/odometry/maxTickPerSec", 8000)        
 
-    odom = Odometry2(baseFrame)
+    odom = Odometry2(baseFrame, wheelTrack, mpt, d4, maxTickPerSec)
     encSub  = rospy.Subscriber("/encoder", Encoder, odom.onEncoderMessage)	    
 
     rate = rospy.Rate(20)
