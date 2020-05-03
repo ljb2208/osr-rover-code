@@ -1,0 +1,7 @@
+<launch>
+	<!-- <include file="$(find osr_bringup)/launch/hardware.machine" /> -->	
+
+	<node pkg="osr" type="osr_tf_broadcaster.py" name="osr_tf_broadcaster">        
+    </node>
+
+</launch>

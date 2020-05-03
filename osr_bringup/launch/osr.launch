@@ -15,7 +15,7 @@
 	<param name="mech_dist" type="string" value="7.254,10.5,10.5,10.073" />
 	
 	<!-- Nodes to run the Open Source Rover -->
-	<node name="odometry" pkg="osr_odometry" type="osr_odom_ackerman2.py" respawn="true" machine="rover-osr">
+	<!-- <node name="odometry" pkg="osr_odometry" type="osr_odom_ackerman2.py" respawn="true" machine="rover-osr">
 		<param name="base_frame_id" type="string" value="base_link" />
 	</node>
 	<node name="motor_controller" pkg="osr" type="motor_controller.py" respawn="true" machine="rover-osr"/>
@@ -27,10 +27,10 @@
 		<param name="autorepeat_rate"   value="1.0"/>
 		<param name="coalesce_interval" value="0.05"/>
 
-	</node> 		
+	</node> 		 -->
 
 	<include file="$(find osr_description)/launch/osr_desc.launch" /> 
-	<include file="$(find osr_bringup)/launch/imu.launch"/>	
-	<include file="$(find osr_bringup)/launch/kf.launch" />
+	<!-- <include file="$(find osr_bringup)/launch/imu.launch"/>	 -->
+	<!-- <include file="$(find osr_bringup)/launch/kf.launch" /> -->
 </launch>
 	

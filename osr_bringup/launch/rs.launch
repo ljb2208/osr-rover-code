@@ -1,17 +1,13 @@
 <launch>	
-	<include file="$(find osr_bringup)/launch/hardware.machine" />	
-	
-	<arg name="external_manager"	default="true" />
-	<arg name="manager"             default="realsense2_camera_manager"/>
-	<arg name="required"             default="false"/>
+	<include file="$(find osr_bringup)/launch/hardware.machine" />		
 
-	<node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" output="screen" required="$(arg required)"/>
-
-	<include file="$(find realsense2_camera)/launch/rs_t265.launch">
-		<arg name="external_manager"               value="$(arg external_manager)"/>
-	</include>
-	<include file="$(find realsense2_camera)/launch/rs_camera.launch">
-		<arg name="external_manager"               value="$(arg external_manager)"/>
-	</include>
+	<group>
+		<include file="$(find realsense2_camera)/launch/rs_t265.launch">				
+		</include>
+	</group>
+	<group>
+		<include file="$(find realsense2_camera)/launch/rs_camera.launch">		
+		</include>
+	</group>
 </launch>
 	

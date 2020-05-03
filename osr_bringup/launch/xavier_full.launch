@@ -9,7 +9,7 @@
 
 	<include file="$(find osr_bringup)/launch/osr.launch"/>		
 	
-    <include file="$(find ximea_camera)/launch/camera2.launch" />
+    <!-- <include file="$(find ximea_camera)/launch/camera2.launch" /> -->
 
 	<include file="$(find rtabmap_ros)/launch/rtabmap.launch">
             <arg name="rtabmap_args"       value="--delete_db_on_start"/>
@@ -23,7 +23,7 @@
             <arg name="rviz"               value="$(arg use_rviz)"/>
             <arg name="rtabmapviz"         value="$(arg use_rtabmapviz)"/>
 			<arg name="approx_rgbd_sync"    value="false" />
-			<arg name="viz_machine"			value="ocs" />
+			<!-- <arg name="viz_machine"			value="ocs" /> -->
     </include>
 </launch>
 	

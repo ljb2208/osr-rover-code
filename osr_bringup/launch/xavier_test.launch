@@ -1,0 +1,15 @@
+<launch>
+	<include file="$(find osr_bringup)/launch/hardware.machine" />	
+
+	<arg name="use_rviz"                  default="false"/>
+    <arg name="use_rtabmapviz"            default="false"/>
+    
+
+	<include file="$(find osr_bringup)/launch/rs.launch"/>   
+
+	<include file="$(find osr_bringup)/launch/osr.launch"/>		
+	
+    <!-- <include file="$(find ximea_camera)/launch/camera2.launch" /> -->
+
+</launch>
+	
