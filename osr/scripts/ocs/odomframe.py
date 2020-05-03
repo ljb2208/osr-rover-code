@@ -60,9 +60,7 @@ class OdometryFrame(Frame):
         self.kfOdom = False
         self.kfOdomVar = IntVar()
         self.kfOdomVar.set(self.kfOdom)
-
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(0, weight=1)        
+        
         self.buildControls()                
 
     def onCanvasResizeEvent(self, event):
@@ -70,21 +68,37 @@ class OdometryFrame(Frame):
         self.yCenter = event.height / 2        
         self.redraw()
 
+    def onResize(self, event=None):
+        self.odomCanvas.config(scrollregion=self.odomCanvas.bbox(ALL))
 
     def buildControls(self):        
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)                
+
         self.odomCanvas = Canvas(self)        
-        self.odomCanvas.grid(row=0, column=0, columnspan=4, sticky=NSEW)    
+        self.odomCanvas.grid(row=0, column=0, sticky=NSEW)    
         self.odomCanvas.bind('<Configure>', self.onCanvasResizeEvent)
         self.controlsFrame = Frame(self, borderwidth=2, relief="groove")
-        self.controlsFrame.grid(row=0, column=0, sticky=N+E+S)
+        self.controlsFrame.grid(row=0, column=2, sticky=N+E+S)
 
+        # create right scrollbar and connect to canvas Y
+        self.verticalBar = Scrollbar(self, orient='vertical', command=self.odomCanvas.yview)        
+        self.verticalBar.grid(row=0, column=1, sticky='ns')
+        self.odomCanvas.configure(yscrollcommand=self.verticalBar.set)
+
+        # create bottom scrollbar and connect to canvas X
+        self.horizontalBar = Scrollbar(self, orient='horizontal', command=self.odomCanvas.xview)        
+        self.horizontalBar.grid(row=1, column=0, sticky='we')
+        self.odomCanvas.configure(xscrollcommand=self.horizontalBar.set)
+
+        self.bind('<Configure>', self.onResize)
 
         zinBtn = Button(self.controlsFrame, text="+", width="2", command=self.zoomIn)
         zoutBtn = Button(self.controlsFrame, text="-", width="2", command=self.zoomOut)
         clCheck = Checkbutton(self.controlsFrame, text="Lines", variable=self.connectLinesVar, command=self.toggleConnectLines)
-        clOdom = Checkbutton(self.controlsFrame, text="Odom", variable=self.odomVar, command=self.toggleOdom)
-        clVisOdom = Checkbutton(self.controlsFrame, text="Vis. Odom", variable=self.visOdomVar, command=self.toggleVisOdom)
-        clKfOdom = Checkbutton(self.controlsFrame, text="KF. Odom", variable=self.kfOdomVar, command=self.toggleKfOdom)
+        clOdom = Checkbutton(self.controlsFrame, text="Odom", variable=self.odomVar, command=self.toggleOdom, foreground="blue")
+        clVisOdom = Checkbutton(self.controlsFrame, text="Vis. Odom", variable=self.visOdomVar, command=self.toggleVisOdom, foreground="red")
+        clKfOdom = Checkbutton(self.controlsFrame, text="KF. Odom", variable=self.kfOdomVar, command=self.toggleKfOdom, foreground="green")
 
         btn = Button(self.controlsFrame, text="Clear All", command=self.clearOdomPoints)
         zinBtn.grid(row=0, column=0, sticky="NE")
