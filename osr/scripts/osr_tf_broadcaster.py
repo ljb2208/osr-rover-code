@@ -27,18 +27,20 @@ class OSRTf():
 
     def getTFMsg(self):        
         self.msg.header.stamp = rospy.Time.now()
-        return msg
+        return self.msg
 
     
 
 class TfBroadCaster():
     def __init__(self):
-        tfList = [OSRTf("base_link", "imu_link", 0.12, 0, 0.50, 0, 0, 0)]
+        self.tfList = [OSRTf("base_link", "imu_link", 0.12, 0, 0.50, 0, 0, 0)]
+        self.tfList.append(OSRTf("base_link", "depth_camera_link", 0.14, 0, 0.45, 0, 0, 0))
+        self.tfList.append(OSRTf("base_link", "tracking_camera_link", 0.14, 0, 0.39, 0, 0, 0))
         self.tfBroadcaster = tf2_ros.TransformBroadcaster()
 
     def publishTFs(self):
-        for tfItem in tfList:
-            self.tfBroadcaster.publishTransform(tfItem.getTFMsg())
+        for tfItem in self.tfList:
+            self.tfBroadcaster.sendTransform(tfItem.getTFMsg())
 
 
 
@@ -50,9 +52,11 @@ if __name__ == "__main__":
 
     tfBroadcaster = TfBroadCaster()
 
-    while not rospy.is_shutdown:
+    while not rospy.is_shutdown():
         tfBroadcaster.publishTFs()
         rate.sleep()
+
+    rospy.loginfo("Exiting...")
 
 
 
