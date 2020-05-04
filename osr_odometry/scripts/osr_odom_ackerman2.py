@@ -9,11 +9,12 @@ import math
 import numpy
 
 class Odometry2():
-    def __init__(self, baseFrame, wheelTrack, mpt, d4, maxTickPerSec):
+    def __init__(self, baseFrame, wheelTrack, mpt, d4, maxTickPerSec, pubTF=False):
         self.encValid = False
         self.priorTime = rospy.Time.now()
         self.priorEncs = [0,0,0,0,0,0]
         self.mpt = mpt
+        self.pubTF = pubTF
         
         # distance between wheels
         self.wheelTrack = wheelTrack
@@ -26,7 +27,9 @@ class Odometry2():
         self.th = 0.0
 
         self.odomPub = rospy.Publisher("/odom", Odometry, queue_size = 1)    
-        self.odomBroadcaster = tf.TransformBroadcaster() 
+        
+        if self.pubTF:
+            self.odomBroadcaster = tf.TransformBroadcaster() 
 
         self.twistCovar = numpy.diag([0.001, 0.001, 0.001, 0.1, 0.1, 0.1]).ravel()
         self.poseCovar = numpy.diag([0.001, 0.001, 0.001, 0.1, 0.1, 0.1]).ravel()
@@ -155,7 +158,9 @@ class Odometry2():
 
         quaternion = self.getQuaternion(self.th)
         
-        self.publishTransform(xRos, yRos, quaternion, currentTime)
+        if self.pubTF:
+            self.publishTransform(xRos, yRos, quaternion, currentTime)
+            
         self.publishOdomMessage(xRos, yRos, vxRos, vyRos, vth, quaternion, currentTime)   
 
         self.priorEncs = encs    
@@ -181,8 +186,9 @@ if __name__ == '__main__':
     wheelTrack = rospy.get_param("/odometry/wheel_track", 0.455)
     d4 = rospy.get_param("/odometry/d4", 0.2559)
     maxTickPerSec = rospy.get_param("/odometry/maxTickPerSec", 8000)        
+    publishTF = rospy.get_param("~publishTF", False)
 
-    odom = Odometry2(baseFrame, wheelTrack, mpt, d4, maxTickPerSec)
+    odom = Odometry2(baseFrame, wheelTrack, mpt, d4, maxTickPerSec, pubTF=publishTF)
     encSub  = rospy.Subscriber("/encoder", Encoder, odom.onEncoderMessage)	    
 
     rate = rospy.Rate(20)

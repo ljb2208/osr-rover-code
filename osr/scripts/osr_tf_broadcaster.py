@@ -36,7 +36,9 @@ class TfBroadCaster():
         self.tfList = [OSRTf("base_link", "imu_link", 0.12, 0, 0.50, 0, 0, 0)]
         self.tfList.append(OSRTf("base_link", "depth_camera_link", 0.14, 0, 0.45, 0, 0, 0))
         self.tfList.append(OSRTf("base_link", "tracking_camera_link", 0.14, 0, 0.39, 0, 0, 0))
-        self.tfList.append(OSRTf("tracking_camera_link", "tracking_camera_odom_frame", 0, 0, 0, 0, 0, 0))
+        self.tfList.append(OSRTf("tracking_camera_pose_frame", "base_link", -0.14, 0, -0.39, 0, 0, 0))  
+
+        # self.tfList.append(OSRTf("tracking_camera_link", "tracking_camera_odom_frame", 0, 0, 0, 0, 0, 0))
         self.tfBroadcaster = tf2_ros.TransformBroadcaster()
 
     def publishTFs(self):
@@ -48,7 +50,7 @@ class TfBroadCaster():
 if __name__ == "__main__":
     rospy.init_node("osr_tf_broadcaster")
 
-    freq = rospy.get_param("~freq", 50)
+    freq = rospy.get_param("~freq", 20)
     rate = rospy.Rate(freq)
 
     tfBroadcaster = TfBroadCaster()

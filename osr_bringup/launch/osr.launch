@@ -31,6 +31,6 @@
 
 	<include file="$(find osr_description)/launch/osr_desc.launch" /> 
 	<include file="$(find osr_bringup)/launch/imu.launch"/>	 
-	<include file="$(find osr_bringup)/launch/kf.launch" />
+	<!-- <include file="$(find osr_bringup)/launch/kf.launch" /> -->
 </launch>
 	
