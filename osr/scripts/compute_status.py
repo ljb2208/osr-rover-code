@@ -2,6 +2,7 @@
 import rospy
 import time
 import subprocess
+import commands
 import string
 from osr_msgs.msg import CompStatus
 
@@ -16,6 +17,7 @@ class MachineStats():
         self.ssid = ""
         self.bitRate = ""
         self.linkQuality = ""
+        self.powerLevel = ""
 
     def __repr__(self):
         return self.memTotal + " : " + self.memFree + " : " + str(self.cpu) + " : " + self.statTime
@@ -26,6 +28,24 @@ class MachineStats():
         self.parseMemStats(lines)
         self.parseTime(lines)
 
+
+    def parseCPUStats(self, stats):
+        for line in stats:
+            if "load average:" in line:
+                ind = line.find("load average:")                
+                line = line[ind+13:]                
+                cpuInfo = line.split(",")                
+
+                sz = len(cpuInfo)
+
+                if sz > len(self.cpu):
+                    sz = len(self.cpu)                
+                
+                for i in range(sz):                    
+                    cpuStr = self.escape_ansi(cpuInfo[i]).strip()                                        
+                    self.cpu[i] = str(cpuStr)
+
+                return    
 
     def escape_ansi(self, info):        
         r = ""
@@ -41,28 +61,8 @@ class MachineStats():
                 r += c            
         return r        
 
-    def parseCPUStats(self, stats):
-        for line in stats:
-            if "load average:" in line:
-                ind = line.find("load average:")                
-                line = line[ind+13:]                
-                cpuInfo = line.split(",")                
-
-                sz = len(cpuInfo)
-
-                if sz > len(self.cpu):
-                    sz = len(self.cpu)                
-                
-                for i in range(sz):                    
-                    cpuStr = self.escape_ansi(cpuInfo[i]).strip()                    
-                    # if '\x1b' in cpuStr:
-                    #     jind = cpuStr.find('\x1b')
-                    #     cpuStr = cpuStr[:jind]                    
-                    self.cpu[i] = str(cpuStr)
-
-                return
-
-    def parseMemStats(self, stats):        
+    
+    def parseMemStats(self, stats):                
         for line in stats:
             if "KiB Mem" in line:
                 sInd = line.find("KiB Mem :")
@@ -87,24 +87,22 @@ class MachineStats():
                 return
 
     def parseWifiStats(self, stats):
-        for line in stats:
+        lines = stats.split('\n')
+        for line in lines:            
             if "ESSID:" in line:
                 sInd = line.find("ESSID:")
                 eInd = line.find('"',  sInd+7)
-
-                self.ssid = line[sInd+7: eInd]
+                self.ssid = line[sInd+7: eInd].strip()
 
             elif "Bit Rate=" in line:
                 sInd = line.find("Bit Rate=")
                 eInd = line.find('Tx',  sInd+9)
-
-                self.bitRate = line[sInd+9: eInd]
+                self.bitRate = line[sInd+9: eInd].strip()
 
             elif "Link Quality" in line:
                 sInd = line.find("Link Quality=")
                 eInd = line.find("Signal",  sInd+13)
-
-                self.linkQuality = line[sInd+13: eInd]
+                self.linkQuality = line[sInd+13: eInd].strip()
 
 
     
@@ -120,6 +118,17 @@ class MachineStats():
     def parseHostName(self, stats):
         self.hostName = stats
 
+    def parsePowerStats(self, stats):
+        sInd = stats.find(":")
+        eInd = stats.find('\n')
+
+        mode = stats[sInd+1:eInd].strip()
+        level = stats[eInd+1:].strip()
+        try:
+            self.powerLevel = mode + " (" + level +")"
+        except:
+            self.powerLevel = ""
+
     def getMessage(self):
         msg = CompStatus()
         msg.host_name = self.hostName
@@ -128,57 +137,72 @@ class MachineStats():
         msg.bit_rate = self.bitRate
         msg.mem_total = self.memTotal
         msg.mem_free = self.memFree
-        msg.mem_pct = self.memPct
+        msg.mem_pct = str(self.memPct)
         msg.stat_time = self.statTime
         msg.cpu1 = self.cpu[0]
         msg.cpu2 = self.cpu[1]
         msg.cpu3 = self.cpu[2]
+        msg.power_level = self.powerLevel
 
         return msg
 
 class ComputerStatus():
-    def __init__(self, compName):
+    def __init__(self, compName, powerMgmt=False):
         self.compName = compName
         self.machineStats = MachineStats()
-        self.pub = rospy.Publisher(compName + "/comp_status", CompStatus)
+        self.powerMgmt = powerMgmt
+        self.pub = rospy.Publisher("comp_status", CompStatus, queue_size=1)
 
     def runCommand(self, command):
         retval = -1
 
         try:
-            retval = subprocess.run(command, bufsize=4096, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)                        
-        except Exception:
+            retval = commands.getoutput(command)                        
+        except Exception as exc:
             retval = None            
+            rospy.logwarn("exception during command: " + str(exc))
+
 
         return retval
 
     def getHostName(self):
-        command = ["hostname"]
+        command = "hostname"
         retval = self.runCommand(command)
 
         if retval is not None:
-            self.machineStats.parseHostName(str(retval.stdout))
+            self.machineStats.parseHostName(str(retval))
+
+    def getPowerSetting(self):
+        command = "sudo /usr/sbin/nvpmodel -q"        
+
+        retval = self.runCommand(command)
+
+        if retval is not None:
+            self.machineStats.parsePowerStats(str(retval))
 
     def getWifiStats(self):
-        command = ["sudo", "iwconfig"]
+        command = "sudo iwconfig"
 
         retval = self.runCommand(command)
 
         if retval is not None:
-            self.machineStats.parseWifiStats(str(retval.stdout))
+            self.machineStats.parseWifiStats(str(retval))
 
-    def getCompStats(self):
-        command = ["top -n 1"]
+    def getCompStats(self):        
+        command = "top -n 1"
 
         retval = self.runCommand(command)
 
         if retval is not None:
-            self.machineStats.parseStats(str(retval.stdout))        
+            self.machineStats.parseStats(str(retval))        
 
-    def publishStatus(self):
+    def publishStatus(self):        
         self.getHostName()
         self.getWifiStats()
         self.getCompStats()
+
+        if self.powerMgmt:
+            self.getPowerSetting()
         
         self.pub.publish(self.machineStats.getMessage())
 
@@ -187,8 +211,9 @@ if __name__ == '__main__':
 
     freq = rospy.get_param("~freq", 0.2)
     compName = rospy.get_param("~comp_name", "xavier-osr")
+    power = rospy.get_param("~power_mgmt", True)
 
-    comp = ComputerStatus(compName)
+    comp = ComputerStatus(compName, powerMgmt=power)
     r = rospy.Rate(freq)
 
     while not rospy.is_shutdown():

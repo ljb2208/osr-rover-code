@@ -9,3 +9,4 @@ string cpu3
 string ssid
 string bit_rate
 string link_quality
+string power_level
