@@ -1,0 +1,7 @@
+<launch>
+	<include file="$(find osr_bringup)/launch/hardware.machine" />	
+
+	<node pkg="osr" type="compute_status.py" name="xavier_compute_status" machine="xavier-osr">        
+    </node>
+
+</launch>

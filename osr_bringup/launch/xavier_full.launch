@@ -8,11 +8,13 @@
 	<include file="$(find osr_bringup)/launch/rs.launch"/>   
 
 	<include file="$(find osr_bringup)/launch/osr.launch"/>		
+
+    <include file="$(find osr_bringup)/launch/osr_tf.launch"/>		
 	
     <!-- <include file="$(find ximea_camera)/launch/camera2.launch" /> -->
 
 	<include file="$(find rtabmap_ros)/launch/rtabmap.launch">
-            <arg name="rtabmap_args"       value="--delete_db_on_start"/>
+            <arg name="rtabmap_args"       value="--delete_db_on_start"/> 
             <arg name="depth_topic"        value="/depth_camera/aligned_depth_to_color/image_raw"/>
             <arg name="frame_id"           value="depth_camera_link"/>
             <arg name="visual_odometry"    value="false"/>
