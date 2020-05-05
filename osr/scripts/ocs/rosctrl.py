@@ -12,7 +12,6 @@ import subprocess
 import time
 from osr_msgs.msg import RunStop, Status, Encoder
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseWithCovarianceStamped
 from functools import partial
 
 class rosLoop():
@@ -37,7 +36,7 @@ class rosLoop():
         self.encoder = rospy.Subscriber("/encoder", Encoder, self.queueRosMsg)
         self.odom = rospy.Subscriber("/odom", Odometry, self.queueRosMsg)
         self.visOdom = rospy.Subscriber("/tracking_camera/odom/sample", Odometry, self.queueRosMsg)
-        self.kfOdom = rospy.Subscriber("/robot_pose_ekf/odom_combined", PoseWithCovarianceStamped, self.queueRosMsg)
+        self.kfOdom = rospy.Subscriber("/robot_pose_ekf/odom_combined", Odometry, self.queueRosMsg)
 
     def queueRosMsg(self, msg):
         self.ocsQueue.put(["Msg", msg])                

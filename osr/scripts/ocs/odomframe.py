@@ -14,7 +14,6 @@ import subprocess
 import time
 from osr_msgs.msg import RunStop, Status, Encoder
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseWithCovarianceStamped
 from functools import partial
 from ocs.launch import *
 from ocs.rosctrl import *
@@ -249,20 +248,17 @@ class OdometryFrame(Frame):
             if self.isNewPoint(point, self.priorOdomPoint, self.odomPoints) and self.odom:
                 self.drawPoint(point, self.priorOdomPoint)
                 self.priorOdomPoint = point
-        else:
+        elif topic == "/tracking_camera/odom/sample":
             point = OdometryPoint(msg.pose.pose.position, None, pointType=1)
             if self.isNewPoint(point, self.priorVisOdomPoint, self.visOdomPoints) and self.visOdom:
                 self.drawPoint(point, self.priorVisOdomPoint)
                 self.priorVisOdomPoint = point
-    
-    def onOCSGeometryMsg(self, msg):
-        point = OdometryPoint(msg.pose.pose.position, None, pointType=2)
+        else:
+            point = OdometryPoint(msg.pose.pose.position, None, pointType=2)
 
-        if self.isNewPoint(point, self.priorKfOdomPoint, self.kfOdomPoints) and self.kfOdom:
-            self.drawPoint(point, self.priorKfOdomPoint)
-            self.priorKfOdomPoint = point
-
-
+            if self.isNewPoint(point, self.priorKfOdomPoint, self.kfOdomPoints) and self.kfOdom:
+                self.drawPoint(point, self.priorKfOdomPoint)
+                self.priorKfOdomPoint = point
 
 
         

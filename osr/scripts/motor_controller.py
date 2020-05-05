@@ -50,7 +50,9 @@ if __name__ == "__main__":
 	enc_pub = rospy.Publisher("/encoder", Encoder, queue_size =1)
 	status_pub = rospy.Publisher("/status", Status, queue_size =1)
 
-	rate = rospy.Rate(5)
+	freq = rospy.get_param("~freq", 20)
+
+	rate = rospy.Rate(freq)
 
 	status = Status()
 	enc   = Encoder()
@@ -87,4 +89,4 @@ if __name__ == "__main__":
 		enc_pub.publish(enc)
 		counter += 1
 		rate.sleep()
-	rospy.spin()
+	
