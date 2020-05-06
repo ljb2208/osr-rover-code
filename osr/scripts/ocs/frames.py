@@ -41,6 +41,7 @@ class LaunchFrame(Frame):
         self.launchItems = {}
         self.buildControls()
         self.ocs.setTimerCallback(self.onTimer)
+        
 
     def buildControls(self):
         launchLabel = Label(self, text="Launch Options", font=FONT_LABEL, justify="left")
@@ -176,6 +177,10 @@ class StatusFrame(Frame):
         self.rcLabel = []
         self.rcAmp = []
         self.rcTemp = []
+
+        self.trackerColors = ["gray", "red", "orange", "green"]
+        self.trackerVal = -1
+        self.mapperVal = -1
         
         self.buildControls()                    
     
@@ -207,7 +212,16 @@ class StatusFrame(Frame):
             self.rcAmp[i*2 + 1].grid(row=2, column=(col+1))   
             self.rcTemp[i].grid(row=3, column=col, columnspan=2)
 
-            col += 2           
+            col += 2          
+
+        conf = Label(self, text="T265 Conf.", anchor=E, font=FONT_LABEL) 
+        conf.grid(row=0, column=col)
+
+        self.trackerLabel = Label(self, text="Tracker", anchor=E, bg="red", borderwidth=2, relief="groove")
+        self.trackerLabel.grid(row=1, column=col)
+
+        self.mapperLabel = Label(self, text="Mapper", anchor=E, bg="red", borderwidth=2, relief="groove")
+        self.mapperLabel.grid(row=2, column=col)
 
 
     def updateValue(self, ctrl, value, valueLevels):
@@ -243,6 +257,15 @@ class StatusFrame(Frame):
 
     def onStatusMsg(self, msg):        
         self.updateValues(msg)
+    
+    def onTrackerMsg(self, msg):        
+        if self.trackerVal != msg.tracker_confidence:
+            self.trackerVal = msg.tracker_confidence
+            self.trackerLabel["bg"] = self.trackerColors[self.trackerVal]
+
+        if self.mapperVal != msg.mapper_confidence:
+            self.mapperVal = msg.mapper_confidence
+            self.mapperLabel["bg"] = self.trackerColors[self.mapperVal]
 
 class NodeList(Frame):
     def __init__(self, ocs, parentCtrl):
