@@ -4,4 +4,8 @@
 	<node pkg="osr" type="compute_status.py" name="xavier_compute_status" machine="xavier-osr" output="screen">        
     </node>
 
+	<node pkg="osr" type="compute_status.py" name="rover_compute_status" machine="rover-osr" output="screen">        
+		<arg name="power_mgmt" value="false" />
+	</node>
+
 </launch>

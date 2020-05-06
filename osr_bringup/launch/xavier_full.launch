@@ -21,7 +21,7 @@
             <arg name="depth_topic"        value="/depth_camera/aligned_depth_to_color/image_raw"/>
             <arg name="frame_id"           value="depth_camera_link"/>
             <arg name="visual_odometry"    value="false"/>
-            <arg name="odom_topic"         value="/tracking_camera/odom/sample"/>
+            <arg name="odom_topic"         value="/robot_pose_ekf/odom_combined"/>
             <arg name="rgb_topic"          value="/depth_camera/color/image_raw"/>
             <arg name="camera_info_topic"  value="/depth_camera/color/camera_info"/>
             <arg name="queue_size"         value="200"/>

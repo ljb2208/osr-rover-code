@@ -248,4 +248,5 @@ class MachineFrame(Frame):
         if self.timerCount == 5:
             self.timerCount = 0
 
-
+    def onMachineMessage(self, msg):
+        rospy.loginfo("msg")
