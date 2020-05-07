@@ -28,7 +28,7 @@
 		<param name="coalesce_interval" value="0.05"/>
 
 	</node> 		
-
+	
 	<include file="$(find osr_description)/launch/osr_desc.launch" /> 
 	<include file="$(find osr_bringup)/launch/imu.launch"/>	 
 	<include file="$(find osr_bringup)/launch/kf.launch" />

@@ -13,6 +13,8 @@
 	<include file="$(find osr_bringup)/launch/osr.launch"/>		
 
     <include file="$(find osr_bringup)/launch/osr_tf.launch"/>		
+
+    <include file="$(find osr_bringup)/launch/machine_stats.launch" /> 
 	
     <!-- <include file="$(find ximea_camera)/launch/camera2.launch" /> -->
 

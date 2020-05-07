@@ -37,6 +37,7 @@ class TfBroadCaster():
         self.tfList.append(OSRTf("base_link", "depth_camera_link", 0.14, 0, 0.45, 0, 0, 0))
         self.tfList.append(OSRTf("base_link", "tracking_camera_link", 0.14, 0, 0.39, 0, 0, 0))
         self.tfList.append(OSRTf("tracking_camera_pose_frame", "base_link", -0.14, 0, -0.39, 0, 0, 0))  
+        self.tfList.append(OSRTf("odom_combined", "base_link", 0, 0, 0, 0, 0, 0))  
 
         # self.tfList.append(OSRTf("tracking_camera_link", "tracking_camera_odom_frame", 0, 0, 0, 0, 0, 0))
         self.tfBroadcaster = tf2_ros.TransformBroadcaster()
