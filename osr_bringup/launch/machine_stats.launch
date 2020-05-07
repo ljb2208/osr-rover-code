@@ -5,7 +5,7 @@
     </node>
 
 	<node pkg="osr" type="compute_status.py" name="rover_compute_status" machine="rover-osr" output="screen">        
-		<arg name="power_mgmt" value="false" />
+		<param name="power_mgmt" value="false" />
 	</node>
 
 </launch>

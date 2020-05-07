@@ -12,7 +12,7 @@ import os
 import math
 import subprocess
 import time
-from osr_msgs.msg import RunStop, Status, Encoder
+from osr_msgs.msg import RunStop, Status, Encoder, CompStatus
 from nav_msgs.msg import Odometry
 from realsense2_camera.msg import Tracker
 from functools import partial
@@ -45,6 +45,7 @@ class OCS():
         self.ibC.append((type(Encoder()), partial(self.roverFrame.onEncoderMsg)))
         self.ibC.append((type(Odometry()), partial(self.odomFrame.onOCSOdomMsg)))        
         self.ibC.append((type(Tracker()), partial(self.statusFrame.onTrackerMsg)))        
+        self.ibC.append((type(CompStatus()), partial(self.roverFrame.onCompStatsMsg)))
 
     def buildMainWindow(self):
         rosMasterURI = os.getenv("ROS_MASTER_URI")

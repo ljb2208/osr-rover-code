@@ -19,6 +19,7 @@ from ocs.rosctrl import *
 from ocs.machine import *
 
 FONT_LABEL = "Arial 11 bold"
+FONT_NORMAL = "Arial 11"
 
 class ImageFrame(Frame):
     def __init__(self, ocs, parentCtrl):
@@ -161,7 +162,8 @@ class RoverFrame(Frame):
 
         self.updateRover()
         
-
+    def onCompStatsMsg(self, msg):
+        self.machineFrame.onCompStatsMsg(msg)
 
 
 class StatusFrame(Frame):

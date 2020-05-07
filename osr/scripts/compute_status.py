@@ -189,12 +189,14 @@ class ComputerStatus():
             self.machineStats.parseWifiStats(str(retval))
 
     def getCompStats(self):        
-        command = "top -n 1"
+        command = "top -n 1 -b"
 
         retval = self.runCommand(command)
 
         if retval is not None:
             self.machineStats.parseStats(str(retval))        
+        else:
+            rospy.logwarn("Comp stats failed")
 
     def publishStatus(self):        
         self.getHostName()

@@ -10,7 +10,7 @@ import os
 import math
 import subprocess
 import time
-from osr_msgs.msg import RunStop, Status, Encoder
+from osr_msgs.msg import RunStop, Status, Encoder, CompStatus
 from nav_msgs.msg import Odometry
 from realsense2_camera.msg import Tracker
 from functools import partial
@@ -39,6 +39,7 @@ class rosLoop():
         self.visOdom = rospy.Subscriber("/tracking_camera/odom/sample", Odometry, self.queueRosMsg)
         self.kfOdom = rospy.Subscriber("/robot_pose_ekf/odom_combined", Odometry, self.queueRosMsg)
         self.tracker = rospy.Subscriber("/tracking_camera/odom/confidence", Tracker, self.queueRosMsg)
+        self.compStats = rospy.Subscriber("/comp_status", CompStatus, self.queueRosMsg)
 
     def queueRosMsg(self, msg):
         self.ocsQueue.put(["Msg", msg])                
