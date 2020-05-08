@@ -2,7 +2,8 @@
 	<include file="$(find osr_bringup)/launch/hardware.machine" />		
 
 	<group>
-		<include file="$(find realsense2_camera)/launch/rs_t265.launch">				
+		<include file="$(find realsense2_camera)/launch/rs_t265.launch">			
+			<arg name="publish_odom_tf"     value="false"/>	
 		</include>
 	</group>
 	<group>
