@@ -12,6 +12,7 @@ import os
 import math
 import subprocess
 import time
+import rosgraph
 from osr_msgs.msg import RunStop, Status, Encoder
 from functools import partial
 from ocs.launch import *
@@ -251,7 +252,7 @@ class StatusFrame(Frame):
         self.updateValue(self.batteryValue, float(msg.battery)/10, self.batteryLevels)
 
         for i in range(10):
-            self.updateValue(self.rcAmp[i], float(msg.current[i])/10, self.rcAmpLevels)        
+            self.updateValue(self.rcAmp[i], float(msg.current[i])/100, self.rcAmpLevels)        
 
         for i in range(5):
             self.updateValue(self.rcTemp[i], float(msg.temp[i])/10, self.rcTempLevels)
@@ -289,7 +290,13 @@ class NodeList(Frame):
         
 
     def getRunningNodes(self):
-        nodes = rosnode.get_node_names()        
+        try:        
+            if rosgraph.is_master_online():
+                nodes = rosnode.get_node_names()        
+            else:
+                nodes = []            
+        except:
+            nodes = []
 
         self.nodeListCtrl.delete(0, END)
 
