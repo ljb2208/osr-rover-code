@@ -10,9 +10,10 @@
   <license>Apache 2</license>
 
   <build_depend>message_generation</build_depend>
+  <build_depend>osr_msgs</build_depend>
+  <exec_depend>osr_msgs</exec_depend>
   <exec_depend>message_runtime</exec_depend>
-
-  <depend>osr_msgs</depend>
+  
   <depend>geometry_msgs</depend>
   <depend>roscpp</depend>
   <depend>sensor_msgs</depend>

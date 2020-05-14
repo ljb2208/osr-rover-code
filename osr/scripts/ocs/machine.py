@@ -57,7 +57,7 @@ class Machine():
             self.runCommand(command, self.onShutdownCallback)        
 
     def buildControls(self, parentCtrl, startRow, startCol):
-        self.machineBtn = Button(parentCtrl, text = self.machineName, width=9, font=FONT_LABEL)                            
+        self.machineBtn = Button(parentCtrl, text = self.machineName, width=9, font=FONT_LABEL, command=self.shutDown)                            
         self.machineBtn.grid(row=startRow, column=startCol, sticky=NW)                
 
         lbl3 = Label(parentCtrl, text="CPU Info", font="Arial 10")

@@ -5,7 +5,7 @@
     <machine name="rover-osr" address="rover-osr" user="lbarnett" default="false" 
 		env-loader="/home/lbarnett/catkin_ws/src/osr-rover-code/osr_bringup/scripts/setupEnvRemote.sh" />      
 
-    <machine name="ocs" address="luke-XPS" user="lbarnett" default="false" 
+    <machine name="ocs" address="ocs" user="lbarnett" default="false" 
 		env-loader="/home/lbarnett/catkin_ws/src/osr-rover-code/osr_bringup/scripts/setupEnvRemoteXPS.sh" />      
 
     <machine name="rtabmap" address="luke-XPS" user="lbarnett" default="false" 

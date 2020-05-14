@@ -1,10 +1,16 @@
 <launch>
 	<include file="$(find osr_bringup)/launch/hardware.machine" />
 
-    <node pkg="rosbag" type="record" name="rosbag" machine="rover-osr"
-       args="record -a -o /media/data/ diagnostics encoder joy joystick odom robot_commands runstop status tf tf_static       
-       tracking_camera/accel/imu_info tracking_camera/accel/sample tracking_camera/gyro/imu_info tracking_camera/gyro/sample 
-       tracking_camera/odom/sample "
+    <node pkg="rosbag" type="record" name="rosbag" machine="ocs"
+       args="record -a -o /home/lbarnett/ depth_camera/aligned_depth_to_color/camera_info depth_camera/aligned_depth_to_color/image_raw depth_camera/color/camera_info
+       depth_camera/color/image_raw depth_camera/depth/camera_info depth_camera/depth/image_rect_raw encoder imu/data joy joystick mavros/imu/data
+       mavros/imu/data_raw  mavros/imu/mag odom robot_commands robot_pose_ekf/odom_combined rtabmap/cloud_ground  rtabmap/cloud_map rtabmap/cloud_obstacles
+       rtabmap/global_path rtabmap/global_path_nodes rtabmap/global_pose rtabmap/grid_map rtabmap/grid_prob_map rtabmap/info rtabmap/initialpose rtabmap/labels
+       rtabmap/landmarks rtabmap/local_grid_empty rtabmap/local_grid_ground rtabmap/local_grid_obstacle rtabmap/local_path rtabmap/local_path_nodes rtabmap/localization_pose 
+        rtabmap/mapData rtabmap/mapGraph rtabmap/mapPath rtabmap/octomap_binary rtabmap/octomap_empty_space rtabmap/octomap_full rtabmap/octomap_grid
+    rtabmap/octomap_ground rtabmap/octomap_obstacles rtabmap/octomap_occupied_space  rtabmap/proj_map rtabmap/proj_map_updates rtabmap/scan_map runstop
+    status tf  tf_static tracking_camera/accel/imu_info tracking_camera/accel/sample tracking_camera/odom/confidence tracking_camera/odom/sample"
+
        />
 
 </launch>
