@@ -1,36 +1,10 @@
 <launch>
 	<include file="$(find osr_bringup)/launch/hardware.machine" />	
 
-	<arg name="use_rviz"                  default="false"/>
-    <arg name="use_rtabmapviz"            default="false"/>
-    
-    <rosparam>
-        /tracking_camera/tracking_module/enable_relocalization: false
-    </rosparam>
+	<include file="$(find realsense2_camera)/launch/rs_t265.launch"/>
+	<include file="$(find osr_bringup)/launch/rosbridge.launch"/>
+	<include file="$(find realsense2_camera)/launch/rs_camera.launch"/>	
 
-	<include file="$(find osr_bringup)/launch/rs.launch"/>   
-
-	<include file="$(find osr_bringup)/launch/osr.launch"/>		
-
-    <include file="$(find osr_bringup)/launch/osr_tf.launch"/>		
-	
-    <!-- <include file="$(find ximea_camera)/launch/camera2.launch" /> -->
-
-	<include file="$(find rtabmap_ros)/launch/rtabmap.launch">
-            <arg name="rtabmap_args"       value="--delete_db_on_start"/> 
-            <arg name="depth_topic"        value="/depth_camera/aligned_depth_to_color/image_raw"/>
-            <arg name="frame_id"           value="depth_camera_link"/>
-            <arg name="visual_odometry"    value="false"/>
-            <arg name="odom_topic"         value="/tracking_camera/odom/sample"/>
-            <arg name="rgb_topic"          value="/depth_camera/color/image_raw"/>
-            <arg name="camera_info_topic"  value="/depth_camera/color/camera_info"/>
-            <arg name="queue_size"         value="200"/>
-            <arg name="rviz"               value="$(arg use_rviz)"/>
-            <arg name="rtabmapviz"         value="$(arg use_rtabmapviz)"/>
-			<arg name="approx_rgbd_sync"    value="false" />
-
-            
-			<!-- <arg name="viz_machine"			value="ocs" /> -->
-    </include>
+	<include file="$(find osr_bringup)/launch/osr.launch"/>	
 </launch>
 	

@@ -14,10 +14,13 @@ class Utils():
         return listVal
 
     @staticmethod
-    def createList(cols, defaultValue):
+    def createList(cols, defaultValue, callable=False):
         listVal = []
 
         for c in range(cols):
-            listVal.append(defaultValue)
+            if callable:
+                listVal.append(defaultValue())
+            else:
+                listVal.append(defaultValue)
 
         return listVal

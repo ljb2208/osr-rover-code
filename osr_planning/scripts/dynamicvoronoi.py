@@ -352,7 +352,7 @@ class DynamicVoronoi():
         rospy.loginfo("sizeX: " + str(self.sizeX))
         rospy.loginfo("sizeY: " + str(self.sizeY))
 
-        for y in range(self.sizeY-1, 0, -1):
+        for y in range(self.sizeY-1, -1, -1):
             for x in range(self.sizeX):                                
 
                 if self.isVoronoi(x, y):

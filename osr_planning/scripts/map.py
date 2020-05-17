@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 from dynamicvoronoi import DynamicVoronoi
 import rospy
 from utils import Utils
@@ -8,7 +8,7 @@ class Map():
         self.map = None
         self.cellSize = 1.
         self.valid = False
-        self.dv = DynamicVoronoi()
+        self.voronoi = DynamicVoronoi()
         self.width = 0
         self.height = 0    
     
@@ -28,8 +28,8 @@ class Map():
                     binMap[x][y] = True        
                 
 
-        self.dv.initializeMap(self.width, self.height, binMap)
-        self.dv.update()
-        self.dv.vizualize()
+        self.voronoi.initializeMap(self.width, self.height, binMap)
+        self.voronoi.update()
+        self.voronoi.vizualize()
 
         rospy.loginfo("setMap complete")

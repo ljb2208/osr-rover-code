@@ -5,6 +5,11 @@ import tf_conversions
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 from nav_msgs.msg import OccupancyGrid
 from map import Map
+from constants import *
+from nodes import *
+from visualize import Visualize
+from path import PathFinder
+from smoother import Smoother
 
 class Goal():
     def __init__(self, map):
@@ -43,6 +48,13 @@ class Planner():
         self.goal = Goal(self.map)
         self.pose = Pose(self.map)
 
+        self.visualization = Visualize()
+        self.smoother = Smoother()
+
+        self.path = PathFinder()
+        self.smoothedPath = PathFinder(smoothed=True)
+
+
         self.subGoal = rospy.Subscriber("/move_base_simple/goal", PoseStamped, self.onGoal)
         self.subInitPose = rospy.Subscriber("/initialpose", PoseWithCovarianceStamped, self.onInitialPose)
         self.subMap = rospy.Subscriber("/map", OccupancyGrid, self.onMap)
@@ -80,3 +92,54 @@ class Planner():
     def plan(self):
         if not self.canPlan():
             rospy.loginfo("Cannot plan yet")
+
+        width = self.map.width
+        height = self.map.height
+        depth = HEADINGS
+        length = width * height * depth
+
+        nodes3D = [None] * length
+        nodes2D = [None] * (width * height)
+
+        nGoal = Node3D(self.goal.x, self.goal.y, self.goal.t, 0, 0, None, None)
+        nStart = Node3D(self.pose.x, self.pose.y, self.pose.t, 0, 0, None, None)
+
+        t0 = rospy.Time.now()
+
+        # clear visualization
+        self.visualization.clear()
+        self.path.clear()
+        self.smoothedPath.clear()
+
+        # find path
+        solution = []
+
+        # trace the plan
+        self.smoother.tracePath(solution)
+        
+        # create updated path
+        self.path.updatePath(self.smoother.getPath())
+
+        # smooth path
+        self.smoother.smoothPath(self.map.voronoi)
+
+        self.smoothedPath.updatePath(self.smoother.getPath())
+        
+        t1 = rospy.Time.now()
+        d = rospy.Duration(t1 - t0)
+
+        rospy.loginfo("Planning time (ms): " + str(d))
+
+        self.path.publishPath()
+        self.path.publishPathNodes()
+        self.path.publishPathVehicles()
+
+        self.smoothedPath.publishPath()
+        self.smoothedPath.publishPathNodes()
+        self.smoothedPath.publishPathVehicles()
+
+        self.visualization.publishNode3DCosts(nodes3D, width, height, depth)
+        self.visualization.publishNode2DCosts(nodes2D, width, height)        
+        
+
+
