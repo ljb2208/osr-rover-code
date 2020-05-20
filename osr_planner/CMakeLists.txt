@@ -19,7 +19,14 @@ find_package(catkin REQUIRED COMPONENTS
     rospy
     std_msgs
     tf
+    dynamic_reconfigure
     )
+
+  
+generate_dynamic_reconfigure_options(
+  cfg/osr_planner.cfg
+  #...
+)
 
 set(SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Algorithm.cpp
@@ -37,6 +44,7 @@ set(SOURCES
     )
 set(HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/include/Algorithm.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/AlgorithmStats.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/Node2D.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/Node3D.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/CollisionDetection.h
@@ -58,8 +66,13 @@ set(HEADERS
     )
 #add_library(osr_planner_lib ${SOURCES} ${HEADERS})
 
+
+
 ## Declare a catkin package
 catkin_package()
+
+
+##add_dependencies(osr_planner ${PROJECT_NAME}_gencfg)
 
 ## OPEN MOTION PLANNING LIBRARY
 find_package(OMPL REQUIRED)

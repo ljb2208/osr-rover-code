@@ -13,6 +13,7 @@ typedef ompl::base::SE2StateSpace::StateType State;
 #include "Visualization.h"
 #include "CollisionDetection.h"
 #include "Settings.h"
+#include "AlgorithmStats.h"
 
 namespace OsrPlanner {
 class Node3D;
@@ -52,7 +53,8 @@ class Algorithm {
                              CollisionDetection& configurationSpace,
                              float* dubinsLookup,
                              Visualization& visualization,
-                             Settings* settings);
+                             Settings* settings,
+                             AlgorithmStats& stats);
 
 };
 }

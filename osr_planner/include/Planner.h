@@ -9,6 +9,8 @@
 #include <tf/transform_listener.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <dynamic_reconfigure/server.h>
+#include <osr_planner/PlannerSettingsConfig.h>
 
 #include "Helper.h"
 #include "Settings.h"
@@ -21,6 +23,7 @@
 #include "Smoother.h"
 #include "CollisionDetection.h"
 #include "Algorithm.h"
+#include "AlgorithmStats.h"
 #include "Lookup.h"
 
 namespace OsrPlanner {
@@ -34,7 +37,11 @@ namespace OsrPlanner {
             void setGoal(const geometry_msgs::PoseStamped::ConstPtr& goal);
             void plan();
 
+            void reconfigureCallback(osr_planner::PlannerSettingsConfig &config, uint32_t level);
+
+
         private:
+            void updateSettings();
             ros::NodeHandle n;  
             ros::Publisher pubStart;            
             ros::Publisher pubVoronoi;
@@ -43,6 +50,9 @@ namespace OsrPlanner {
             ros::Subscriber subStart;            
             tf::TransformListener listener;            
             tf::StampedTransform transform;
+
+            dynamic_reconfigure::Server<osr_planner::PlannerSettingsConfig> reconfigureServer;
+            dynamic_reconfigure::Server<osr_planner::PlannerSettingsConfig>::CallbackType reconfigureCB;
 
             nav_msgs::OccupancyGrid::Ptr grid;  
             geometry_msgs::PoseWithCovarianceStamped start;  
@@ -62,6 +72,9 @@ namespace OsrPlanner {
 
             Constants::config collisionLookup[Constants::headings * Constants::positions];
             float * dubinsLookup = NULL;
+
+            void outputAlgoStats(AlgorithmStats& stats);
+            void outputAlgoStat(std::string name, FunctionCallStats& stat);
     };
 }
 

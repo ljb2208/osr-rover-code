@@ -4,10 +4,7 @@ using namespace OsrPlanner;
 
 Planner::Planner()
 {
-    visualization.setSettings(&settings);
-    path.setSettings(&settings);
-    smoothedPath.setSettings(&settings);
-    smoother.setSettings(&settings);
+    updateSettings();
 
     pubStart = n.advertise<geometry_msgs::PoseStamped>("/move_base_simple/start", 1);
     pubVoronoi = n.advertise<nav_msgs::OccupancyGrid>("/voronoi/map", 1, true);
@@ -20,12 +17,32 @@ Planner::Planner()
 
     subGoal = n.subscribe("/move_base_simple/goal", 1, &Planner::setGoal, this);
     subStart = n.subscribe("/initialpose", 1, &Planner::setStart, this);
+
+    reconfigureCB = boost::bind(&Planner::reconfigureCallback, this, _1, _2);
+    reconfigureServer.setCallback(reconfigureCB);
 }
 
 Planner::~Planner()
 {
     if (dubinsLookup != NULL)
         delete [] dubinsLookup;
+}
+
+void Planner::reconfigureCallback(osr_planner::PlannerSettingsConfig &config, uint32_t level)
+{
+    settings.setFromConfig(config);
+    updateSettings();
+}
+
+void Planner::updateSettings()
+{
+    visualization.setSettings(&settings);
+    path.setSettings(&settings);
+    smoothedPath.setSettings(&settings);
+    smoother.setSettings(&settings);
+
+    initializeLookups();
+    plan();
 }
 
 void Planner::initializeLookups() {
@@ -96,7 +113,17 @@ void Planner::setStart(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr&
     startN.header.frame_id = "map";
     startN.header.stamp = ros::Time::now();
 
-    ROS_INFO_STREAM("I am seeing a new start x:" << x << " y:" << y << " t:" << Helper::toDeg(t));
+    ROS_INFO_STREAM("Start x/y/z: " << 
+        initial->pose.pose.position.x << "/" <<
+        initial->pose.pose.position.y << "/" <<
+        initial->pose.pose.position.z << " orientation x/y/z/w: " << 
+        initial->pose.pose.orientation.x << "/" <<
+        initial->pose.pose.orientation.y << "/" <<
+        initial->pose.pose.orientation.z << "/" <<
+        initial->pose.pose.orientation.w      
+        );
+
+    ROS_INFO_STREAM("New start x:" << x << " y:" << y << " t:" << Helper::toDeg(t));
 
     if (grid->info.height >= y && y >= 0 && grid->info.width >= x && x >= 0) {
         validStart = true;
@@ -119,7 +146,17 @@ void Planner::setGoal(const geometry_msgs::PoseStamped::ConstPtr& end) {
     float y = end->pose.position.y / settings.getCellSize();
     float t = tf::getYaw(end->pose.orientation);
 
-    ROS_INFO_STREAM("I am seeing a new goal x:" << x << " y:" << y << " t:" << Helper::toDeg(t));
+    ROS_INFO_STREAM("Goal x/y/z: " << 
+        end->pose.position.x << "/" <<
+        end->pose.position.y << "/" <<
+        end->pose.position.z << " orientation x/y/z/w: " << 
+        end->pose.orientation.x << "/" <<
+        end->pose.orientation.y << "/" <<
+        end->pose.orientation.z << "/" <<
+        end->pose.orientation.w      
+        );
+
+    ROS_INFO_STREAM("New goal x:" << x << " y:" << y << " t:" << Helper::toDeg(t));
 
     if (grid->info.height >= y && y >= 0 && grid->info.width >= x && x >= 0) {
         validGoal = true;
@@ -179,11 +216,17 @@ void Planner::plan() {
         path.clear();
         smoothedPath.clear();
         // // FIND THE PATH
-        Node3D* nSolution = Algorithm::hybridAStar(nStart, nGoal, nodes3D, nodes2D, width, height, configurationSpace, dubinsLookup, visualization, &settings);
+        AlgorithmStats stats;
+        Node3D* nSolution = Algorithm::hybridAStar(nStart, nGoal, nodes3D, nodes2D, width, height, configurationSpace, dubinsLookup, visualization, &settings, stats);
+
+        ros::Time t1 = ros::Time::now();
+        ros::Duration d1(t1 - t0);
+
+        ROS_INFO_STREAM("Algorithm time: " << d1 * 1000);
 
         if (nSolution == nullptr)        
         {
-            ROS_INFO("No solution found");
+            ROS_WARN("No solution found");
         }
         // // TRACE THE PATH
         smoother.tracePath(nSolution);
@@ -193,12 +236,16 @@ void Planner::plan() {
         smoother.smoothPath(voronoiDiagram);
         // CREATE THE UPDATED PATH
         smoothedPath.updatePath(smoother.getPath());
-        ros::Time t1 = ros::Time::now();
-        ros::Duration d(t1 - t0);
-        std::cout << "TIME in ms: " << d * 1000 << std::endl;
+        ros::Time t2 = ros::Time::now();
+        ros::Duration d2(t2 - t1);
+        ROS_INFO_STREAM("Trace and smooth time: " << d2 * 1000);
+
+        ros::Duration d3(t2 - t0);
+        ROS_INFO_STREAM("Total planning time: " << d3 * 1000);                
 
         // _________________________________
         // PUBLISH THE RESULTS OF THE SEARCH
+        ros::Time t3 = ros::Time::now();
         path.publishPath();
         path.publishPathNodes();
         path.publishPathVehicles();
@@ -207,6 +254,12 @@ void Planner::plan() {
         smoothedPath.publishPathVehicles();
         visualization.publishNode3DCosts(nodes3D, width, height, depth);
         visualization.publishNode2DCosts(nodes2D, width, height);
+        ros::Time t4 = ros::Time::now();
+
+        ros::Duration d4(t4 - t3);
+        ROS_INFO_STREAM("Total publishing time: " << d4 * 1000);      
+
+        outputAlgoStats(stats);        
 
         delete [] nodes3D;
         delete [] nodes2D;
@@ -214,4 +267,16 @@ void Planner::plan() {
     } else {
         ROS_WARN("missing goal or start");
     }
+}
+
+void Planner::outputAlgoStats(AlgorithmStats& stats)
+{
+    ROS_INFO_STREAM("Algorith Stats. Iterations: " << stats.iterations);  
+    outputAlgoStat("updateH ", stats.updateH);
+    outputAlgoStat("viz.    ", stats.viz);
+}
+void Planner::outputAlgoStat(std::string name, FunctionCallStats& stat)
+{
+    ROS_INFO_STREAM(name << " : " << stat.numCalls << " min: " << stat.getMinCallTime() << " max: " << stat.maxCallTime << " avg: " 
+            << stat.getAvgCallTime() << " total: " << stat.totalCallTime);
 }

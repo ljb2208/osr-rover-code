@@ -93,6 +93,8 @@ class Node3D {
   /// Validity check to test, whether the node is in the 3D array.
   bool isOnGrid(const int width, const int height) const;
 
+  bool reachedGoal(const Node3D& goal);
+
   // SUCCESSOR CREATION
   /// Creates a successor in the continous space.
   Node3D* createSuccessor(const int i);

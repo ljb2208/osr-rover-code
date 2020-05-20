@@ -1,0 +1,28 @@
+Start x/y/z: 12.2428/74.6184/0 orientation x/y/z/w: 0/0/-0.522122/0.852871
+Goal x/y/z: 49.2825/35.9644/0 orientation x/y/z/w: 0/0/-0.548592/0.83609
+
+New goal x:54.4842 y:38.6549 t:306.254
+
+Start x/y/z: 9.10385/76.5915/0 orientation x/y/z/w: 0/0/-0.605835/0.795591
+[ INFO] [1589914939.491996008]: New start x:9.10385 y:76.5915 t:285.422
+[ WARN] [1589914939.492063889]: missing goal or start
+[ INFO] [1589914943.139320485]: Goal x/y/z: 18.162/32.7357/0 orientation x/y/z/w: 0/0/-0.692232/0.721675
+
+
+
+
+For publishing start
+rostopic pub --once /initialpose geometry_msgs/PoseWithCovarianceStamped  '{header: {stamp: now, frame_id: "map"}, pose: {pose: {position: {x: 9, y: 76, z: 0.0}, orientation: {z: -0.522122, w: 0.795591}}}}'
+
+
+For publishing goal
+
+rostopic pub --once move_base_simple/goal geometry_msgs/PoseStamped '{header: {stamp: now, frame_id: "map"}, pose: {position: {x: 18, y: 33, z: 0.0}, orientation: {z: -0.692232, w: 0.721675}}}'
+
+    subGoal = n.subscribe("/move_base_simple/goal", 1, &Planner::setGoal, this);
+    subStart = n.subscribe("/initialpose", 1, &Planner::setStart, this);
+
+
+
+    geometry_msgs::PoseWithCovarianceStamped - Start
+    geometry_msgs::PoseStamped - Goal

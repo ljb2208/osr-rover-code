@@ -90,6 +90,12 @@ void Node3D::updateG() {
   }
 }
 
+bool Node3D::reachedGoal(const Node3D& goal) {
+    return (int)(x + 0.5) == (int)(goal.x + 0.5) &&
+         (int)(y + 0.5) == (int)(goal.y + 0.5) &&
+         (std::abs(t - goal.t) <= Constants::deltaHeadingRad ||
+          std::abs(t - goal.t) >= Constants::deltaHeadingNegRad);
+}
 //###################################################
 //                                 3D NODE COMPARISON
 //###################################################

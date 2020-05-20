@@ -1,11 +1,15 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
+#include <osr_planner/PlannerSettingsConfig.h>
+
 namespace OsrPlanner {
 
     class Settings{
         public:
             Settings();
+
+            void setFromConfig(osr_planner::PlannerSettingsConfig &config);
 
             int getCellSize(){return cellSize;};
             bool getManualMode(){return manualMode;}
@@ -30,6 +34,7 @@ namespace OsrPlanner {
             bool getReverseEnabled() { return reverseEnabled; }
             bool getVisualizationEnabled() { return visualizationEnabled; }
             bool getVisualization2DEnabled() { return visualization2DEnabled; }
+            float getVisualizationDelay() { return visualizationDelay; }
 
             int getIterations() { return iterations; }
 
@@ -42,6 +47,7 @@ namespace OsrPlanner {
             bool manualMode;
             bool visualizationEnabled;
             bool visualization2DEnabled;
+            float visualizationDelay;
             bool reverseEnabled;
 
             float penaltyTurning;

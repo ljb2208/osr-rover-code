@@ -1,12 +1,16 @@
 #include "Algorithm.h"
 
 #include <boost/heap/binomial_heap.hpp>
+#include <chrono>
+#include <iostream>
+#include <fstream>
 
 using namespace OsrPlanner;
 
 float aStar(Node2D& start, Node2D& goal, Node2D* nodes2D, int width, int height, CollisionDetection& configurationSpace, Visualization& visualization, Settings* settings);
-void updateH(Node3D& start, const Node3D& goal, Node2D* nodes2D, float* dubinsLookup, int width, int height, CollisionDetection& configurationSpace, Visualization& visualization, Settings* settings);
+void updateH(Node3D& start, const Node3D& goal, Node2D* nodes2D, float* dubinsLookup, int width, int height, CollisionDetection& configurationSpace, Visualization& visualization, Settings* settings, AlgorithmStats& stats);
 Node3D* dubinsShot(Node3D& start, const Node3D& goal, CollisionDetection& configurationSpace, Settings* settings);
+
 
 //###################################################
 //                                    NODE COMPARISON
@@ -25,6 +29,11 @@ struct CompareNodes {
   }
 };
 
+void dumpNodesToFile(int index, const boost::heap::binomial_heap<Node3D*, boost::heap::compare<CompareNodes>>& pq);
+void checkNodes(int index, const boost::heap::binomial_heap<Node3D*, boost::heap::compare<CompareNodes>>& pq);
+void deleteNode3D(boost::heap::binomial_heap<Node3D*, boost::heap::compare<CompareNodes>>& pq, const Node3D& node);
+void deleteNode2D(boost::heap::binomial_heap<Node2D*, boost::heap::compare<CompareNodes>>& pq, const Node2D& node);
+
 //###################################################
 //                                        3D A*
 //###################################################
@@ -37,7 +46,8 @@ Node3D* Algorithm::hybridAStar(Node3D& start,
                                CollisionDetection& configurationSpace,
                                float* dubinsLookup,
                                Visualization& visualization,
-                               Settings* settings) {
+                               Settings* settings,
+                               AlgorithmStats& stats) {
 
   // PREDECESSOR AND SUCCESSOR INDEX
   int iPred, iSucc;
@@ -47,9 +57,10 @@ Node3D* Algorithm::hybridAStar(Node3D& start,
   // Number of iterations the algorithm has run for stopping based on Constants::iterations
   int iterations = 0;
   int maxIterations = settings->getIterations();
+  bool dumpNodes = false;
 
   // VISUALIZATION DELAY
-  ros::Duration d(0.003);
+  ros::Duration d(settings->getVisualizationDelay());  
 
   // OPEN LIST AS BOOST IMPLEMENTATION
   typedef boost::heap::binomial_heap<Node3D*,
@@ -58,7 +69,7 @@ Node3D* Algorithm::hybridAStar(Node3D& start,
   priorityQueue O;
 
   // update h value
-  updateH(start, goal, nodes2D, dubinsLookup, width, height, configurationSpace, visualization, settings);
+  updateH(start, goal, nodes2D, dubinsLookup, width, height, configurationSpace, visualization, settings, stats);
   // mark start as open
   start.open();
   // push on priority queue aka open list
@@ -70,21 +81,34 @@ Node3D* Algorithm::hybridAStar(Node3D& start,
   Node3D* nPred;
   Node3D* nSucc;
 
+  int fileIndex = 0;
+
   // float max = 0.f;
 
   // continue until O empty
   while (!O.empty()) {
+
+    if (dumpNodes)
+    {             
+        dumpNodesToFile(fileIndex, O);
+        fileIndex++;
+        dumpNodes = false;
+    }
+
     // pop node with lowest cost from priority queue
     nPred = O.top();
     // set index
     iPred = nPred->setIdx(width, height);
     iterations++;
+    stats.iterations++;
 
     // RViz visualization
     if (settings->getVisualizationEnabled()) {
-      visualization.publishNode3DPoses(*nPred);
-      visualization.publishNode3DPose(*nPred);
-      d.sleep();      
+        auto startV = stats.viz.getTime();
+        visualization.publishNode3DPoses(*nPred);
+        visualization.publishNode3DPose(*nPred);        
+        d.sleep();      
+        stats.viz.updateCallTime(startV);
     }
 
     // _____________________________
@@ -119,7 +143,7 @@ Node3D* Algorithm::hybridAStar(Node3D& start,
         if (settings->getDubinsShotEnabled() && nPred->isInRange(goal) && nPred->getPrim() < 3) {
           nSucc = dubinsShot(*nPred, goal, configurationSpace, settings);
 
-          if (nSucc != nullptr && *nSucc == goal) {
+          if (nSucc != nullptr && nSucc->reachedGoal(goal)) {
             //DEBUG
             // std::cout << "max diff " << max << std::endl;
             return nSucc;
@@ -148,7 +172,7 @@ Node3D* Algorithm::hybridAStar(Node3D& start,
               if (!nodes3D[iSucc].isOpen() || newG < nodes3D[iSucc].getG() || iPred == iSucc) {
 
                 // calculate H value
-                updateH(*nSucc, goal, nodes2D, dubinsLookup, width, height, configurationSpace, visualization, settings);
+                updateH(*nSucc, goal, nodes2D, dubinsLookup, width, height, configurationSpace, visualization, settings, stats);
 
                 // if the successor is in the same cell but the C value is larger
                 if (iPred == iSucc && nSucc->getC() > nPred->getC() + Constants::tieBreaker) {
@@ -164,10 +188,24 @@ Node3D* Algorithm::hybridAStar(Node3D& start,
                   std::cout << "looping";
                 }
 
-                // put successor on open list
-                nSucc->open();
-                nodes3D[iSucc] = *nSucc;
+                // if (nodes3D[iSucc].isOpen())
+                // {
+                //     if (nodes3D[iSucc].getC() <= nSucc->getC())
+                //     {
+                //         // discard new node as it already exists with lower cost
+                //         delete nSucc;
+                //         continue;
+                //     }
+                //     else
+                //     {                        
+                //         deleteNode3D(O, nodes3D[iSucc]);
+                //     }                                        
+                // }                
+
+                nSucc->open();                
+                nodes3D[iSucc] = *nSucc;                                
                 O.push(&nodes3D[iSucc]);
+
                 delete nSucc;
               } else { delete nSucc; }
             } else { delete nSucc; }
@@ -283,6 +321,22 @@ float aStar(Node2D& start,
             if (!nodes2D[iSucc].isOpen() || newG < nodes2D[iSucc].getG()) {
               // calculate the H value
               nSucc->updateH(goal);
+
+                // if (nodes2D[iSucc].isOpen())
+                // {
+                //     if (nodes2D[iSucc].getC() <= nSucc->getC())
+                //     {
+                //         // discard new node as it already exists with lower cost
+                //         delete nSucc;
+                //         continue;
+                //     }
+                //     else
+                //     {                        
+                //         deleteNode2D(O, nodes2D[iSucc]);
+                //     }                                        
+                // }                
+  
+
               // put successor on open list
               nSucc->open();
               nodes2D[iSucc] = *nSucc;
@@ -302,63 +356,62 @@ float aStar(Node2D& start,
 //###################################################
 //                                         COST TO GO
 //###################################################
-void updateH(Node3D& start, const Node3D& goal, Node2D* nodes2D, float* dubinsLookup, int width, int height, CollisionDetection& configurationSpace, Visualization& visualization, Settings* settings) {
-  float dubinsCost = 0;
-  float reedsSheppCost = 0;
-  float twoDCost = 0;
-  float twoDoffset = 0;
+void updateH(Node3D& start, const Node3D& goal, Node2D* nodes2D, float* dubinsLookup, int width, int height, CollisionDetection& configurationSpace, Visualization& visualization, Settings* settings, AlgorithmStats& stats) {
+    
+    auto tStart = stats.updateH.getTime();
 
-  // if dubins heuristic is activated calculate the shortest path
-  // constrained without obstacles
-  if (settings->getDubinsEnabled()) {
-    ompl::base::DubinsStateSpace dubinsPath(settings->getTurningRadius());
-    State* dbStart = (State*)dubinsPath.allocState();
-    State* dbEnd = (State*)dubinsPath.allocState();
-    dbStart->setXY(start.getX(), start.getY());
-    dbStart->setYaw(start.getT());
-    dbEnd->setXY(goal.getX(), goal.getY());
-    dbEnd->setYaw(goal.getT());
-    dubinsCost = dubinsPath.distance(dbStart, dbEnd);
-  }
+    float dubinsCost = 0;
+    float reedsSheppCost = 0;
+    float twoDCost = 0;
+    float twoDoffset = 0;
 
-  // if reversing is active use a
-  if (settings->getReverseEnabled() && !settings->getDubinsEnabled()) {
-    //    ros::Time t0 = ros::Time::now();
-    ompl::base::ReedsSheppStateSpace reedsSheppPath(settings->getTurningRadius());
-    State* rsStart = (State*)reedsSheppPath.allocState();
-    State* rsEnd = (State*)reedsSheppPath.allocState();
-    rsStart->setXY(start.getX(), start.getY());
-    rsStart->setYaw(start.getT());
-    rsEnd->setXY(goal.getX(), goal.getY());
-    rsEnd->setYaw(goal.getT());
-    reedsSheppCost = reedsSheppPath.distance(rsStart, rsEnd);    
-  }
+    // if dubins heuristic is activated calculate the shortest path
+    // constrained without obstacles
+    if (settings->getDubinsEnabled()) {
+        ompl::base::DubinsStateSpace dubinsPath(settings->getTurningRadius());
+        State* dbStart = (State*)dubinsPath.allocState();
+        State* dbEnd = (State*)dubinsPath.allocState();
+        dbStart->setXY(start.getX(), start.getY());
+        dbStart->setYaw(start.getT());
+        dbEnd->setXY(goal.getX(), goal.getY());
+        dbEnd->setYaw(goal.getT());
+        dubinsCost = dubinsPath.distance(dbStart, dbEnd);
+    }
 
-  // if twoD heuristic is activated determine shortest path
-  // unconstrained with obstacles
-  if (settings->getTwoDEnabled() && !nodes2D[(int)start.getY() * width + (int)start.getX()].isDiscovered()) {
-    //    ros::Time t0 = ros::Time::now();
-    // create a 2d start node
-    Node2D start2d(start.getX(), start.getY(), 0, 0, nullptr);
-    // create a 2d goal node
-    Node2D goal2d(goal.getX(), goal.getY(), 0, 0, nullptr);
-    // run 2d astar and return the cost of the cheapest path for that node
-    nodes2D[(int)start.getY() * width + (int)start.getX()].setG(aStar(goal2d, start2d, nodes2D, width, height, configurationSpace, visualization, settings));
-    //    ros::Time t1 = ros::Time::now();
-    //    ros::Duration d(t1 - t0);
-    //    std::cout << "calculated 2D Heuristic in ms: " << d * 1000 << std::endl;
-  }
+    // if reversing is active use a
+    if (settings->getReverseEnabled() && !settings->getDubinsEnabled()) {        
+        ompl::base::ReedsSheppStateSpace reedsSheppPath(settings->getTurningRadius());
+        State* rsStart = (State*)reedsSheppPath.allocState();
+        State* rsEnd = (State*)reedsSheppPath.allocState();
+        rsStart->setXY(start.getX(), start.getY());
+        rsStart->setYaw(start.getT());
+        rsEnd->setXY(goal.getX(), goal.getY());
+        rsEnd->setYaw(goal.getT());
+        reedsSheppCost = reedsSheppPath.distance(rsStart, rsEnd);    
+    }
 
-  if (settings->getTwoDEnabled()) {
-    // offset for same node in cell
-    twoDoffset = sqrt(((start.getX() - (long)start.getX()) - (goal.getX() - (long)goal.getX())) * ((start.getX() - (long)start.getX()) - (goal.getX() - (long)goal.getX())) +
-                      ((start.getY() - (long)start.getY()) - (goal.getY() - (long)goal.getY())) * ((start.getY() - (long)start.getY()) - (goal.getY() - (long)goal.getY())));
-    twoDCost = nodes2D[(int)start.getY() * width + (int)start.getX()].getG() - twoDoffset;
+    // if twoD heuristic is activated determine shortest path
+    // unconstrained with obstacles
+    if (settings->getTwoDEnabled() && !nodes2D[(int)start.getY() * width + (int)start.getX()].isDiscovered()) {    
+        // create a 2d start node
+        Node2D start2d(start.getX(), start.getY(), 0, 0, nullptr);
+        // create a 2d goal node
+        Node2D goal2d(goal.getX(), goal.getY(), 0, 0, nullptr);
+        // run 2d astar and return the cost of the cheapest path for that node
+        nodes2D[(int)start.getY() * width + (int)start.getX()].setG(aStar(goal2d, start2d, nodes2D, width, height, configurationSpace, visualization, settings));    
+    }
 
-  }
+    if (settings->getTwoDEnabled()) {
+        // offset for same node in cell
+        twoDoffset = sqrt(((start.getX() - (long)start.getX()) - (goal.getX() - (long)goal.getX())) * ((start.getX() - (long)start.getX()) - (goal.getX() - (long)goal.getX())) +
+                        ((start.getY() - (long)start.getY()) - (goal.getY() - (long)goal.getY())) * ((start.getY() - (long)start.getY()) - (goal.getY() - (long)goal.getY())));
+        twoDCost = nodes2D[(int)start.getY() * width + (int)start.getX()].getG() - twoDoffset;
 
-  // return the maximum of the heuristics, making the heuristic admissable
-  start.setH(std::max(reedsSheppCost, std::max(dubinsCost, twoDCost)));
+    }
+
+    // return the maximum of the heuristics, making the heuristic admissable
+    start.setH(std::max(reedsSheppCost, std::max(dubinsCost, twoDCost)));
+    stats.updateH.updateCallTime(tStart);
 }
 
 //###################################################
@@ -411,8 +464,101 @@ Node3D* dubinsShot(Node3D& start, const Node3D& goal, CollisionDetection& config
       delete [] dubinsNodes;
       return nullptr;
     }
-  }
-
+  }    
+    
   //  std::cout << "Dubins shot connected, returning the path" << "\n";
   return &dubinsNodes[i - 1];
+}
+
+void dumpNodesToFile(int index, const boost::heap::binomial_heap<Node3D*,
+          boost::heap::compare<CompareNodes>>& pq)
+{
+    std::ofstream outfile;
+
+    std::string filename = "nodes3d";
+    filename.append(std::to_string(index));
+    filename.append(".txt");
+    outfile.open(filename);
+    outfile << "Index\tX\tY\tT\tG\tH\tC\tIdx\tPrim\tOpen\tClosed\n";
+    boost::heap::binomial_heap<Node3D*, boost::heap::compare<CompareNodes>>::ordered_iterator it;
+
+    int i = 0;
+
+    for(it = pq.ordered_begin(); it != pq.ordered_end(); ++it)
+    {        
+        Node3D* n = *it;
+        outfile << i << "\t";
+        outfile << n->getX() << "\t";
+        outfile << n->getY() << "\t";
+        outfile << n->getT() << "\t";
+        outfile << n->getG() << "\t";
+        outfile << n->getH() << "\t";
+        outfile << n->getC() << "\t";
+        outfile << n->getIdx() << "\t";
+        outfile << n->getPrim() << "\t";
+        outfile << n->isOpen() << "\t";
+        outfile << n->isClosed() << "\t";
+        outfile << "\n";
+        i++;
+    }
+
+    outfile.close();
+
+    
+}
+
+void checkNodes(int index, const boost::heap::binomial_heap<Node3D*, boost::heap::compare<CompareNodes>>& pq)
+{
+     boost::heap::binomial_heap<Node3D*, boost::heap::compare<CompareNodes>>::ordered_iterator it;    
+
+    float priorC = 0;
+    bool dump = false;
+
+    for(it = pq.ordered_begin(); it != pq.ordered_end(); ++it)
+    {
+        Node3D* n = *it;
+
+        if (n->getC() < priorC)
+        {
+            std::cout << "Issue with heap";
+            dump = true;
+        }
+
+        priorC = n->getC();
+    }
+
+    if (index < 0 && dump)
+        dumpNodesToFile(index, pq);
+}
+
+void deleteNode3D(boost::heap::binomial_heap<Node3D*, boost::heap::compare<CompareNodes>>& pq, const Node3D& node)
+{    
+    for(auto it = pq.begin(); it != pq.end(); ++it)
+    {
+        Node3D* n = *it;
+
+        if (n->getIdx() == node.getIdx())
+        {
+            boost::heap::binomial_heap<Node3D*, boost::heap::compare<CompareNodes>>::handle_type h;
+            h = boost::heap::binomial_heap<Node3D*, boost::heap::compare<CompareNodes>>::s_handle_from_iterator(it);
+            pq.erase(h);           
+            return;
+        }
+    }
+}
+
+void deleteNode2D(boost::heap::binomial_heap<Node2D*, boost::heap::compare<CompareNodes>>& pq, const Node2D& node)
+{    
+    for(auto it = pq.begin(); it != pq.end(); ++it)
+    {
+        Node2D* n = *it;
+
+        if (n->getIdx() == node.getIdx())
+        {
+            boost::heap::binomial_heap<Node2D*, boost::heap::compare<CompareNodes>>::handle_type h;
+            h = boost::heap::binomial_heap<Node2D*, boost::heap::compare<CompareNodes>>::s_handle_from_iterator(it);
+            pq.erase(h);           
+            return;
+        }
+    }
 }
