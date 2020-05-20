@@ -29,6 +29,8 @@ generate_dynamic_reconfigure_options(
 )
 
 set(SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Heuristics.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/HASAlgorithm.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Algorithm.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Node2D.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Node3D.cpp
@@ -43,6 +45,8 @@ set(SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/BucketedQueue.cpp #Boris Lau, Christoph Sprunk, Wolfram Burgard
     )
 set(HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/Heuristics.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/HASAlgorithm.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/Algorithm.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/AlgorithmStats.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/Node2D.h

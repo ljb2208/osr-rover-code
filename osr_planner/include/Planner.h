@@ -12,6 +12,7 @@
 #include <dynamic_reconfigure/server.h>
 #include <osr_planner/PlannerSettingsConfig.h>
 
+
 #include "Helper.h"
 #include "Settings.h"
 #include "DynamicVoronoi.h"
@@ -25,6 +26,7 @@
 #include "Algorithm.h"
 #include "AlgorithmStats.h"
 #include "Lookup.h"
+#include "Heuristics.h"
 
 namespace OsrPlanner {
     class Planner {
@@ -69,6 +71,7 @@ namespace OsrPlanner {
             Path path;
             Path smoothedPath = Path(true);
             Smoother smoother;
+            Heuristics heuristics;
 
             Constants::config collisionLookup[Constants::headings * Constants::positions];
             float * dubinsLookup = NULL;

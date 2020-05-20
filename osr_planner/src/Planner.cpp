@@ -61,7 +61,7 @@ void Planner::initializeLookups() {
 }
 
 void Planner::setMap(const nav_msgs::OccupancyGrid::Ptr map) {
-    ROS_INFO("Received new map");
+    ROS_INFO("Received new map");    
 
     grid = map;
 
@@ -79,6 +79,7 @@ void Planner::setMap(const nav_msgs::OccupancyGrid::Ptr map) {
         }
     }    
 
+    heuristics.setMap(binMap, width, height);
     voronoiDiagram.initializeMap(width, height, binMap);
     voronoiDiagram.update();
     voronoiDiagram.visualize();    
@@ -155,6 +156,25 @@ void Planner::setGoal(const geometry_msgs::PoseStamped::ConstPtr& end) {
         end->pose.orientation.z << "/" <<
         end->pose.orientation.w      
         );
+
+            
+    ros::Time t0 = ros::Time::now();
+
+    heuristics.calculate2DCosts((int)x, (int)y);
+
+    ros::Time t1 = ros::Time::now();
+    ros::Duration d1(t1 - t0);
+
+    ROS_INFO_STREAM("2D Cost time: " << d1 * 1000);
+
+    ros::Time t2 = ros::Time::now();
+
+    heuristics.calculate2DCostsNew((int)x, (int)y);
+
+    ros::Time t3 = ros::Time::now();
+    ros::Duration d2(t3 - t2);
+
+    ROS_INFO_STREAM("2D Cost time: " << d2 * 1000);
 
     ROS_INFO_STREAM("New goal x:" << x << " y:" << y << " t:" << Helper::toDeg(t));
 
