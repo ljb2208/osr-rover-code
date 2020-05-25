@@ -89,6 +89,8 @@ class Node3D {
   /// Determines whether it is appropriate to find a analytical solution.
   bool isInRange(const Node3D& goal) const;
 
+  bool isInRangeRS(const Node3D& goal) const;
+
   // GRID CHECKING
   /// Validity check to test, whether the node is in the 3D array.
   bool isOnGrid(const int width, const int height) const;
@@ -98,6 +100,8 @@ class Node3D {
   // SUCCESSOR CREATION
   /// Creates a successor in the continous space.
   Node3D* createSuccessor(const int i);
+
+  Node3D* createSuccessorFromRS(const int i);
 
   // CONSTANT VALUES
   /// Number of possible directions

@@ -1,5 +1,5 @@
-#ifndef ALGORITHM_H
-#define ALGORITHM_H
+#ifndef HAS_ALGORITHM_H
+#define HAS_ALGORITHM_H
 
 #include <boost/heap/binomial_heap.hpp>
 #include <ompl/base/spaces/ReedsSheppStateSpace.h>
@@ -12,15 +12,20 @@ typedef ompl::base::SE2StateSpace::StateType State;
 #include "Node3D.h"
 #include "Node2D.h"
 #include "Visualization.h"
-#include "CollisionDetection.h"
 #include "Settings.h"
 #include "AlgorithmStats.h"
+#include "Heuristics.h"
+#include "Helper.h"
+#include "CollisionMap.h"
+
+#include <ros/ros.h>
+#include <tf/transform_datatypes.h>
+#include <tf/transform_listener.h>
+#include <nav_msgs/OccupancyGrid.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <math.h>
 
 namespace OsrPlanner {
-class Node3D;
-class Node2D;
-class Visualization;
-class Settings;
 
 /*!
  * \brief A class that encompasses the functions central to the search.
@@ -61,21 +66,28 @@ class HASAlgorithm {
                              Node2D* nodes2D,
                              int width,
                              int height,
-                             CollisionDetection& configurationSpace,
-                             float* dubinsLookup,
-                             Visualization& visualization,
-                             Settings* settings,
-                             AlgorithmStats& stats);
+                             CollisionMap& collisionMap,                             
+                             Visualization& visualization,                             
+                             AlgorithmStats& stats,
+                             Heuristics& heuristics);
 
-
-   float aStar(Node2D& start, Node2D& goal, Node2D* nodes2D, int width, int height, CollisionDetection& configurationSpace, Visualization& visualization, Settings* settings);
-   void updateH(Node3D& start, const Node3D& goal, Node2D* nodes2D, float* dubinsLookup, int width, int height, CollisionDetection& configurationSpace, Visualization& visualization, Settings* settings, AlgorithmStats& stats);
-   Node3D* dubinsShot(Node3D& start, const Node3D& goal, CollisionDetection& configurationSpace, Settings* settings);
+   void setSettings(Settings* settings) { this->settings = settings;}   
    void dumpNodesToFile(int index, const boost::heap::binomial_heap<Node3D*, boost::heap::compare<CompareNodes>>& pq);
-   void checkNodes(int index, const boost::heap::binomial_heap<Node3D*, boost::heap::compare<CompareNodes>>& pq);
-   void deleteNode3D(boost::heap::binomial_heap<Node3D*, boost::heap::compare<CompareNodes>>& pq, const Node3D& node);
-   void deleteNode2D(boost::heap::binomial_heap<Node2D*, boost::heap::compare<CompareNodes>>& pq, const Node2D& node);
+   void checkNodes(int index, const boost::heap::binomial_heap<Node3D*, boost::heap::compare<CompareNodes>>& pq);   
+   void processNode(Node3D* nodes3D, const Node3D& goal, Node3D* nPred, Node3D* nSucc, int width, int height, CollisionMap& collisionMap, Heuristics& heuristics, int& iPred, bool updateG);
+   Node3D* validateRSPath(const Node3D& goal, Node3D* nPred, CollisionMap& collisionMap);
+
+   private:
+        // OPEN LIST AS BOOST IMPLEMENTATION
+         typedef boost::heap::binomial_heap<Node3D*, boost::heap::compare<CompareNodes>> priorityQueue;
+         priorityQueue pq;
+         Settings* settings;
+
+         ros::NodeHandle n;  
+         ros::Publisher pubRS;            
+         geometry_msgs::PoseArray rsPoses;         
+         int getDirection(bool reverse, float tOrig, float tNew);
 
 };
 }
-#endif // ALGORITHM_H
+#endif // HAS_ALGORITHM_H

@@ -59,9 +59,13 @@ namespace OsrPlanner {
         public:
             AlgorithmStats(){
                 iterations = 0;                
+                rsShots = 0;
+                rsShotsSuccessful = 0;
             };        
 
             int iterations;
+            int rsShots;
+            int rsShotsSuccessful;
             FunctionCallStats updateH;            
             FunctionCallStats viz;
     };

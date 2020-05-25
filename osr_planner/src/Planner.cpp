@@ -40,6 +40,11 @@ void Planner::updateSettings()
     path.setSettings(&settings);
     smoothedPath.setSettings(&settings);
     smoother.setSettings(&settings);
+    heuristics.setSettings(&settings);    
+    hasAlgorithm.setSettings(&settings);
+    collisionMap.setSettings(&settings);
+    voronoiField.setSettings(&settings);
+    voronoiDiagram.setSettings(&settings);
 
     initializeLookups();
     plan();
@@ -65,7 +70,7 @@ void Planner::setMap(const nav_msgs::OccupancyGrid::Ptr map) {
 
     grid = map;
 
-    configurationSpace.updateGrid(map);
+    // configurationSpace.updateGrid(map);
 
     int height = map->info.height;
     int width = map->info.width;
@@ -79,7 +84,9 @@ void Planner::setMap(const nav_msgs::OccupancyGrid::Ptr map) {
         }
     }    
 
+    collisionMap.setMap(binMap, width, height);
     heuristics.setMap(binMap, width, height);
+    // voronoiField.setMap(binMap, width, height);
     voronoiDiagram.initializeMap(width, height, binMap);
     voronoiDiagram.update();
     voronoiDiagram.visualize();    
@@ -165,16 +172,7 @@ void Planner::setGoal(const geometry_msgs::PoseStamped::ConstPtr& end) {
     ros::Time t1 = ros::Time::now();
     ros::Duration d1(t1 - t0);
 
-    ROS_INFO_STREAM("2D Cost time: " << d1 * 1000);
-
-    ros::Time t2 = ros::Time::now();
-
-    heuristics.calculate2DCostsNew((int)x, (int)y);
-
-    ros::Time t3 = ros::Time::now();
-    ros::Duration d2(t3 - t2);
-
-    ROS_INFO_STREAM("2D Cost time: " << d2 * 1000);
+    ROS_INFO_STREAM("2D Cost time: " << d1 * 1000);    
 
     ROS_INFO_STREAM("New goal x:" << x << " y:" << y << " t:" << Helper::toDeg(t));
 
@@ -237,7 +235,8 @@ void Planner::plan() {
         smoothedPath.clear();
         // // FIND THE PATH
         AlgorithmStats stats;
-        Node3D* nSolution = Algorithm::hybridAStar(nStart, nGoal, nodes3D, nodes2D, width, height, configurationSpace, dubinsLookup, visualization, &settings, stats);
+        // Node3D* nSolution = Algorithm::hybridAStar(nStart, nGoal, nodes3D, nodes2D, width, height, configurationSpace, dubinsLookup, visualization, &settings, stats);
+        Node3D* nSolution = hasAlgorithm.runAlgo(nStart, nGoal, nodes3D, nodes2D, width, height, collisionMap, visualization, stats, heuristics);
 
         ros::Time t1 = ros::Time::now();
         ros::Duration d1(t1 - t0);
@@ -291,7 +290,7 @@ void Planner::plan() {
 
 void Planner::outputAlgoStats(AlgorithmStats& stats)
 {
-    ROS_INFO_STREAM("Algorith Stats. Iterations: " << stats.iterations);  
+    ROS_INFO_STREAM("Algorith Stats. Iterations: " << stats.iterations << " RS Shots: " << stats.rsShotsSuccessful << "/" << stats.rsShots);  
     outputAlgoStat("updateH ", stats.updateH);
     outputAlgoStat("viz.    ", stats.viz);
 }

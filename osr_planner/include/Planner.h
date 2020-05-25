@@ -22,11 +22,14 @@
 #include "Visualization.h"
 #include "Path.h"
 #include "Smoother.h"
+#include "CollisionMap.h"
 #include "CollisionDetection.h"
 #include "Algorithm.h"
 #include "AlgorithmStats.h"
 #include "Lookup.h"
 #include "Heuristics.h"
+#include "HASAlgorithm.h"
+#include "VoronoiField.h"
 
 namespace OsrPlanner {
     class Planner {
@@ -72,6 +75,9 @@ namespace OsrPlanner {
             Path smoothedPath = Path(true);
             Smoother smoother;
             Heuristics heuristics;
+            HASAlgorithm hasAlgorithm;
+            CollisionMap collisionMap;
+            VoronoiField voronoiField;
 
             Constants::config collisionLookup[Constants::headings * Constants::positions];
             float * dubinsLookup = NULL;

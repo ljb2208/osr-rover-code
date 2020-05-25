@@ -11,7 +11,8 @@
 #include <nav_msgs/OccupancyGrid.h>
 
 #include "BucketedQueue.h"
-
+#include "Settings.h"
+#include "AlgorithmStats.h"
 
 namespace OsrPlanner {
     //! A DynamicVoronoi object computes and updates a distance map and Voronoi diagram.
@@ -22,10 +23,32 @@ namespace OsrPlanner {
             DynamicVoronoi();
             ~DynamicVoronoi();
 
+            struct dataCell {
+                float dist;
+                char voronoi;
+                char queueing;
+                int obstX;
+                int obstY;
+                int vorX;
+                int vorY;
+                bool needsRaise;
+                int sqdist;
+                float vDist;
+            };
+
+            struct pointCell {                
+                int x;
+                int y;       
+                int vx;
+                int vy;                         
+            };
+
             //! Initialization with an empty map
             void initializeEmpty(int _sizeX, int _sizeY, bool initGridMap = true);
             //! Initialization with a given binary map (false==free, true==occupied)
             void initializeMap(int _sizeX, int _sizeY, std::vector<std::vector<bool>> _gridMap);
+
+            void setSettings(Settings* settings);
 
             //! add an obstacle at the specified cell coordinate
             void occupyCell(int x, int y);
@@ -47,7 +70,13 @@ namespace OsrPlanner {
             bool isOccupied(int x, int y);
             //! write the current distance map and voronoi diagram as ppm file
             void visualize(const char* filename = "result.ppm");
+            void visualizeField(const char* filename = "field.ppm");
             void getOccupancyGrid(nav_msgs::OccupancyGrid& occGrid);
+
+            void updateVDist();
+            void updateVDist(int x, int y, int vx, int vy, std::queue<pointCell>& openCells);
+
+            float getCost(int x, int y);
 
 
             //! returns the horizontal size of the workspace/map
@@ -57,15 +86,7 @@ namespace OsrPlanner {
 
             // was private, changed to public for obstX, obstY
             public:
-            struct dataCell {
-                float dist;
-                char voronoi;
-                char queueing;
-                int obstX;
-                int obstY;
-                bool needsRaise;
-                int sqdist;
-            };
+            
 
             typedef enum {voronoiKeep = -4, freeQueued = -3, voronoiRetry = -2, voronoiPrune = -1, free = 0, occupied = 1} State;
             typedef enum {fwNotQueued = 1, fwQueued = 2, fwProcessed = 3, bwQueued = 4, bwProcessed = 1} QueueingState;
@@ -92,7 +113,7 @@ namespace OsrPlanner {
 
             std::vector<INTPOINT> removeList;
             std::vector<INTPOINT> addList;
-            std::vector<INTPOINT> lastObstacles;
+            std::vector<INTPOINT> lastObstacles;            
 
             // maps
             int sizeY;
@@ -105,6 +126,11 @@ namespace OsrPlanner {
             double doubleThreshold;
 
             double sqrt2;  
+
+            float alpha;
+            float thetaAdj;
+
+            Settings* settings;
     };
 }
 

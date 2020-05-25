@@ -8,9 +8,14 @@ const int Node3D::dir = 3;
 // possible movements
 
 // R = 6, 6.75 DEG
-const float Node3D::dy[] = { 0,        -0.0415893,  0.0415893};
-const float Node3D::dx[] = { 0.7068582,   0.705224,   0.705224};
-const float Node3D::dt[] = { 0,         0.1178097,   -0.1178097};
+// const float Node3D::dy[] = { 0,        -0.0415893,  0.0415893};
+// const float Node3D::dx[] = { 0.7068582,   0.705224,   0.705224};
+// const float Node3D::dt[] = { 0,         0.1178097,   -0.1178097};
+
+
+const float Node3D::dy[] = { 0,    -0.0415893,  0.0415893};
+const float Node3D::dx[] = { 1.0,   0.705224,   0.705224};
+const float Node3D::dt[] = { 0,     0.1178097,   -0.1178097};
 
 
 //###################################################
@@ -29,6 +34,14 @@ bool Node3D::isInRange(const Node3D& goal) const {
   float dx = std::abs(x - goal.x) / random;
   float dy = std::abs(y - goal.y) / random;
   return (dx * dx) + (dy * dy) < settings->getDubinsShotDistance();
+}
+
+bool Node3D::isInRangeRS(const Node3D& goal) const
+{
+    int range = std::max((int) getH(), 10);
+    int random = rand() % range;            
+
+    return  random < settings->getRSExpansionFactor();    
 }
 
 //###################################################
@@ -54,7 +67,6 @@ Node3D* Node3D::createSuccessor(const int i) {
 
   return new Node3D(xSucc, ySucc, tSucc, g, 0, this, this->settings, i);
 }
-
 
 //###################################################
 //                                      MOVEMENT COST

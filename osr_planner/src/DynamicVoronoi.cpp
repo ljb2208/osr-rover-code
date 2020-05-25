@@ -17,6 +17,22 @@ DynamicVoronoi::~DynamicVoronoi() {
   }
 }
 
+void DynamicVoronoi::setSettings(Settings* settings)
+{
+  this->settings = settings;
+  this->alpha = settings->getVoronoiAlpha();
+  this->thetaAdj = ((settings->getVoronoiTheta() - settings->getVoronoiMaxDistance()) * (settings->getVoronoiTheta() - settings->getVoronoiMaxDistance())) / (settings->getVoronoiMaxDistance() * settings->getVoronoiMaxDistance());
+}
+
+float DynamicVoronoi::getCost(int x, int y)
+{
+    float odist = data[x][y].dist;
+    float vdist = data[x][y].vDist;        
+
+    float pv = (alpha/(alpha + odist))*(vdist/(odist + vdist))* thetaAdj;
+    return pv;
+}
+
 void DynamicVoronoi::initializeEmpty(int _sizeX, int _sizeY, bool initGridMap) {
   sizeX = _sizeX;
   sizeY = _sizeY;
@@ -45,6 +61,7 @@ void DynamicVoronoi::initializeEmpty(int _sizeX, int _sizeY, bool initGridMap) {
   c.voronoi = free;
   c.queueing = fwNotQueued;
   c.needsRaise = false;
+  c.vDist = INFINITY;
 
   for (int x=0; x<sizeX; x++)
     for (int y=0; y<sizeY; y++) data[x][y] = c;
@@ -93,6 +110,87 @@ void DynamicVoronoi::initializeMap(int _sizeX, int _sizeY, std::vector<std::vect
       }
     }
   }  
+}
+
+void DynamicVoronoi::updateVDist()
+{
+    FunctionCallStats fc;
+    auto start = fc.getTime();
+    std::vector<pointCell> vCells;
+
+    for (int x=0; x < sizeX; x++)
+    {
+      for (int y=0; y < sizeY; y++)
+      {
+        if (isVoronoi(x, y))
+          vCells.push_back({x, y, x, y});
+      }
+    }    
+    
+    std::queue<pointCell> openCells;
+    std::vector<pointCell>::iterator it;    
+
+    for (it = vCells.begin(); it != vCells.end(); ++it)
+    {
+        int vx = it->x;
+        int vy = it->y;
+
+        updateVDist(vx, vy, vx, vy, openCells);        
+    }
+
+    while (!openCells.empty())
+    {
+        pointCell pt = openCells.front();
+        openCells.pop();
+
+        updateVDist(pt.x, pt.y, pt.vx, pt.vy, openCells);      
+    }    
+
+    fc.updateCallTime(start);
+    std::cout << "call time: " << fc.totalCallTime << "\n";
+}
+
+
+
+void DynamicVoronoi::updateVDist(int x, int y, int vx, int vy, std::queue<pointCell>& openCells)
+{
+    for (int dx=-1; dx <= 1; dx++)        
+    {
+      if (dx == 0)
+        continue;
+
+      for (int dy=-1; dy <=1; dy++)
+      {
+        if (dy == 0)
+          continue;
+
+        int nx = x + dx;
+        int ny = y + dy;
+
+        if (nx < 0 || nx >= sizeX || ny < 0 || ny >= sizeY)
+          continue; // ignore as not on map
+        
+        if (isVoronoi(nx, ny))
+          continue; // ignore as another voronoi cell
+
+        if (gridMap[nx][ny])
+          continue; // ignore as it is an obstacle        
+
+        float distance = sqrt(pow(vx - nx, 2) + pow(vy - ny, 2));
+
+        if (distance >= data[nx][ny].vDist)
+          continue; // ignore as point is closer to another voronoi cell
+
+        if (distance >= settings->getVoronoiMaxDistance())
+          continue; // ignore as point is further away than max distance
+        
+        data[nx][ny].vDist = distance;
+        data[nx][ny].vorX = vx;
+        data[nx][ny].vorY = vx;
+
+        openCells.push({nx, ny, vx, vy});        
+      }
+    }
 }
 
 void DynamicVoronoi::occupyCell(int x, int y) {
@@ -235,6 +333,8 @@ void DynamicVoronoi::update(bool updateRealDist) {
     }
     data[x][y] = c;
   }
+
+  updateVDist();
 }
 
 float DynamicVoronoi::getDistance( int x, int y ) {
@@ -438,6 +538,44 @@ void DynamicVoronoi::visualize(const char *filename) {
         fputc( c, F );
         fputc( c, F );
         fputc( c, F );
+      }
+    }
+  }
+  fclose(F);
+
+  visualizeField();
+}
+
+void DynamicVoronoi::visualizeField(const char *filename) {
+  // write pgm files
+
+  FILE* F = fopen(filename, "w");
+  if (!F) {
+    std::cerr << "could not open 'result.pgm' for writing!\n";
+    return;
+  }
+  fprintf(F, "P6\n");
+  fprintf(F, "%d %d 255\n", sizeX, sizeY);
+
+  for(int y = sizeY-1; y >=0; y--){      
+    for(int x = 0; x<sizeX; x++){	
+      unsigned char c = 0;
+      if (isVoronoi(x,y)) {
+        fputc( 255, F );
+        fputc( 0, F );
+        fputc( 0, F );
+      } else if (data[x][y].sqdist==0) {
+        fputc( 0, F );
+        fputc( 0, F );
+        fputc( 0, F );
+      } else {
+        float f = 80+(std::min(data[x][y].vDist, settings->getVoronoiMaxDistance()) *25);
+        if (f>255) f=255;
+        if (f<0) f=0;
+        c = (unsigned char)f;
+        fputc( c, F );
+        fputc( c, F );
+        fputc( c, F );        
       }
     }
   }

@@ -23,6 +23,25 @@ namespace OsrPlanner {
         static inline float clamp(float n, float lower, float upper) {
             return std::max(lower, std::min(n, upper));
         }
+
+        static inline float euclidianDistance(float x1, float y1, float x2, float y2)
+        {
+            return std::sqrt(std::pow(x1 - x2, 2) + std::pow(y1 - y2, 2));
+        }
+
+        static inline float minVal(float v1, float v2, float v3, float v4)
+        {
+            float val = std::min(v1, v2);
+            val = std::min(val, v3);
+            return std::min(val, v4);
+        }
+
+        static inline float maxVal(float v1, float v2, float v3, float v4)
+        {
+            float val = std::max(v1, v2);
+            val = std::max(val, v3);
+            return std::max(val, v4);
+        }
     }
 }
 

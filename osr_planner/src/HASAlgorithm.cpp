@@ -9,7 +9,8 @@ using namespace OsrPlanner;
 
 HASAlgorithm::HASAlgorithm()
 {
-
+    pubRS = n.advertise<geometry_msgs::PoseArray>("/rsPath", 100);
+    rsPoses.header.frame_id = "path";
 }
 
 //###################################################
@@ -21,15 +22,13 @@ Node3D* HASAlgorithm::runAlgo(Node3D& start,
                                Node2D* nodes2D,
                                int width,
                                int height,
-                               CollisionDetection& configurationSpace,
-                               float* dubinsLookup,
-                               Visualization& visualization,
-                               Settings* settings,
-                               AlgorithmStats& stats) {
+                               CollisionMap& collisionMap,
+                               Visualization& visualization,                               
+                               AlgorithmStats& stats,
+                               Heuristics& heuristics) {
 
   // PREDECESSOR AND SUCCESSOR INDEX
-  int iPred, iSucc;
-  float newG;
+  int iPred;  
   // Number of possible directions, 3 for forward driving and an additional 3 for reversing
   int dir = settings->getReverseEnabled() ? 6 : 3;
   // Number of iterations the algorithm has run for stopping based on Constants::iterations
@@ -39,19 +38,15 @@ Node3D* HASAlgorithm::runAlgo(Node3D& start,
 
   // VISUALIZATION DELAY
   ros::Duration d(settings->getVisualizationDelay());  
+  
+  pq.clear();
 
-  // OPEN LIST AS BOOST IMPLEMENTATION
-  typedef boost::heap::binomial_heap<Node3D*,
-          boost::heap::compare<CompareNodes>
-          > priorityQueue;
-  priorityQueue O;
-
-  // update h value
-  updateH(start, goal, nodes2D, dubinsLookup, width, height, configurationSpace, visualization, settings, stats);
+  // update h value  
+  start.setH(heuristics.getHeuristicValue(start.getX(), start.getY(), start.getT(), goal.getX(), goal.getY(), goal.getT()));
   // mark start as open
   start.open();
   // push on priority queue aka open list
-  O.push(&start);
+  pq.push(&start);
   iPred = start.setIdx(width, height);
   nodes3D[iPred] = start;
 
@@ -64,17 +59,17 @@ Node3D* HASAlgorithm::runAlgo(Node3D& start,
   // float max = 0.f;
 
   // continue until O empty
-  while (!O.empty()) {
+  while (!pq.empty()) {
 
     if (dumpNodes)
     {             
-        dumpNodesToFile(fileIndex, O);
+        dumpNodesToFile(fileIndex, pq);
         fileIndex++;
         dumpNodes = false;
     }
 
     // pop node with lowest cost from priority queue
-    nPred = O.top();
+    nPred = pq.top();
     // set index
     iPred = nPred->setIdx(width, height);
     iterations++;
@@ -94,7 +89,7 @@ Node3D* HASAlgorithm::runAlgo(Node3D& start,
     // if there exists a pointer this node has already been expanded
     if (nodes3D[iPred].isClosed()) {
       // pop node from the open list and start with a fresh node
-      O.pop();
+      pq.pop();
       continue;
     }
     // _________________
@@ -103,349 +98,88 @@ Node3D* HASAlgorithm::runAlgo(Node3D& start,
       // add node to closed list
       nodes3D[iPred].close();
       // remove node from open list
-      O.pop();
+      pq.pop();
 
-      // _________
-      // GOAL TEST
-
+      // check if at goal or max iterations
       if (*nPred == goal || iterations > maxIterations) {
         // DEBUG
         return nPred;
       }
 
-      // ____________________
-      // CONTINUE WITH SEARCH
-      else {
-        // _______________________
-        // SEARCH WITH DUBINS SHOT
-        if (settings->getDubinsShotEnabled() && nPred->isInRange(goal) && nPred->getPrim() < 3) {
-          nSucc = dubinsShot(*nPred, goal, configurationSpace, settings);
-
-          if (nSucc != nullptr && nSucc->reachedGoal(goal)) {
-            //DEBUG
-            // std::cout << "max diff " << max << std::endl;
-            return nSucc;
-          }
-        }
-
-        // ______________________________
-        // SEARCH WITH FORWARD SIMULATION
-        for (int i = 0; i < dir; i++) {
+      // iterate through possible directions of travel and process node
+      for (int i = 0; i < dir; i++) {
           // create possible successor
           nSucc = nPred->createSuccessor(i);
-          // set index of the successor
-          iSucc = nSucc->setIdx(width, height);
-
-          // ensure successor is on grid and traversable
-          if (nSucc->isOnGrid(width, height) && configurationSpace.isTraversable(nSucc)) {
-
-            // ensure successor is not on closed list or it has the same index as the predecessor
-            if (!nodes3D[iSucc].isClosed() || iPred == iSucc) {
-
-              // calculate new G value
-              nSucc->updateG();
-              newG = nSucc->getG();
-
-              // if successor not on open list or found a shorter way to the cell
-              if (!nodes3D[iSucc].isOpen() || newG < nodes3D[iSucc].getG() || iPred == iSucc) {
-
-                // calculate H value
-                updateH(*nSucc, goal, nodes2D, dubinsLookup, width, height, configurationSpace, visualization, settings, stats);
-
-                // if the successor is in the same cell but the C value is larger
-                if (iPred == iSucc && nSucc->getC() > nPred->getC() + Constants::tieBreaker) {
-                  delete nSucc;
-                  continue;
-                }
-                // if successor is in the same cell and the C value is lower, set predecessor to predecessor of predecessor
-                else if (iPred == iSucc && nSucc->getC() <= nPred->getC() + Constants::tieBreaker) {
-                  nSucc->setPred(nPred->getPred());
-                }
-
-                if (nSucc->getPred() == nSucc) {
-                  std::cout << "looping";
-                }
-
-                // if (nodes3D[iSucc].isOpen())
-                // {
-                //     if (nodes3D[iSucc].getC() <= nSucc->getC())
-                //     {
-                //         // discard new node as it already exists with lower cost
-                //         delete nSucc;
-                //         continue;
-                //     }
-                //     else
-                //     {                        
-                //         deleteNode3D(O, nodes3D[iSucc]);
-                //     }                                        
-                // }                
-
-                nSucc->open();                
-                nodes3D[iSucc] = *nSucc;                                
-                O.push(&nodes3D[iSucc]);
-
-                delete nSucc;
-              } else { delete nSucc; }
-            } else { delete nSucc; }
-          } else { delete nSucc; }
-        }
+          processNode(nodes3D, goal, nPred, nSucc, width, height, collisionMap, heuristics, iPred, true);
       }
+
+      // perform Reeds Shepp expansion
+      if (nPred->isInRangeRS(goal))
+      {                    
+          stats.rsShots++;
+          nSucc = validateRSPath(goal, nPred, collisionMap);
+
+          if (nSucc != nullptr)
+          {
+            processNode(nodes3D, goal, nPred, nSucc, width, height, collisionMap, heuristics, iPred, false);
+            stats.rsShotsSuccessful++;
+          }
+      }            
     }
   }
 
-  if (O.empty()) {
+  if (pq.empty()) {
     return nullptr;
   }
 
   return nullptr;
 }
 
-//###################################################
-//                                        2D A*
-//###################################################
-float HASAlgorithm::aStar(Node2D& start,
-            Node2D& goal,
-            Node2D* nodes2D,
-            int width,
-            int height,
-            CollisionDetection& configurationSpace,
-            Visualization& visualization,
-            Settings* settings) {
+void HASAlgorithm::processNode(Node3D* nodes3D, const Node3D& goal, Node3D* nPred, Node3D* nSucc, int width, int height, CollisionMap& collisionMap, Heuristics& heuristics, int& iPred, bool updateG)
+{    
+    // set index of the successor
+    int iSucc = nSucc->setIdx(width, height);
 
-  // PREDECESSOR AND SUCCESSOR INDEX
-  int iPred, iSucc;
-  float newG;
+    // ensure successor is on grid and traversable
+    if (nSucc->isOnGrid(width, height) && collisionMap.isTraversable(nSucc)) {
 
-  // reset the open and closed list
-  for (int i = 0; i < width * height; ++i) {
-    nodes2D[i].reset();
-  }
+      // ensure successor is not on closed list or it has the same index as the predecessor
+      if (!nodes3D[iSucc].isClosed() || iPred == iSucc) {
 
-  // VISUALIZATION DELAY
-  ros::Duration d(0.001);
+        // calculate new G value
+        if (updateG)
+          nSucc->updateG();
 
-  boost::heap::binomial_heap<Node2D*,
-        boost::heap::compare<CompareNodes>> O;
-  // update h value
-  start.updateH(goal);
-  // mark start as open
-  start.open();
-  // push on priority queue
-  O.push(&start);
-  iPred = start.setIdx(width);
-  nodes2D[iPred] = start;
+        float newG = nSucc->getG();
 
-  // NODE POINTER
-  Node2D* nPred;
-  Node2D* nSucc;
+        // if successor not on open list or found a shorter way to the cell
+        if (!nodes3D[iSucc].isOpen() || newG < nodes3D[iSucc].getG() || iPred == iSucc) {
 
-  // continue until O empty
-  while (!O.empty()) {
-    // pop node with lowest cost from priority queue
-    nPred = O.top();
-    // set index
-    iPred = nPred->setIdx(width);
+          // calculate H value
+          nSucc->setH(heuristics.getHeuristicValue(nSucc->getX(), nSucc->getY(), nSucc->getT(), goal.getX(), goal.getY(), goal.getT()));                
 
-    // _____________________________
-    // LAZY DELETION of rewired node
-    // if there exists a pointer this node has already been expanded
-    if (nodes2D[iPred].isClosed()) {
-      // pop node from the open list and start with a fresh node
-      O.pop();
-      continue;
-    }
-    // _________________
-    // EXPANSION OF NODE
-    else if (nodes2D[iPred].isOpen()) {
-      // add node to closed list
-      nodes2D[iPred].close();
-      nodes2D[iPred].discover();
+          // if the successor is in the same cell but the C value is larger
+          if (iPred == iSucc && nSucc->getC() > nPred->getC() + Constants::tieBreaker) {
+            delete nSucc;
+            return;
+          }
+          // if successor is in the same cell and the C value is lower, set predecessor to predecessor of predecessor
+          else if (iPred == iSucc && nSucc->getC() <= nPred->getC() + Constants::tieBreaker) {
+            nSucc->setPred(nPred->getPred());
+          }
 
-      // RViz visualization
-      if (settings->getVisualization2DEnabled()) {  
-        visualization.publishNode2DPoses(*nPred);
-        visualization.publishNode2DPose(*nPred);
-        //        d.sleep();
-      }
+          if (nSucc->getPred() == nSucc) {
+            std::cout << "looping";
+          }
 
-      // remove node from open list
-      O.pop();
+          nSucc->open();                
+          nodes3D[iSucc] = *nSucc;                                
+          pq.push(&nodes3D[iSucc]);
 
-      // _________
-      // GOAL TEST
-      if (*nPred == goal) {
-        return nPred->getG();
-      }
-      // ____________________
-      // CONTINUE WITH SEARCH
-      else {
-        // _______________________________
-        // CREATE POSSIBLE SUCCESSOR NODES
-        for (int i = 0; i < Node2D::dir; i++) {
-          // create possible successor
-          nSucc = nPred->createSuccessor(i);
-          // set index of the successor
-          iSucc = nSucc->setIdx(width);
-
-          // ensure successor is on grid ROW MAJOR
-          // ensure successor is not blocked by obstacle
-          // ensure successor is not on closed list
-          if (nSucc->isOnGrid(width, height) &&  configurationSpace.isTraversable(nSucc) && !nodes2D[iSucc].isClosed()) {
-            // calculate new G value
-            nSucc->updateG();
-            newG = nSucc->getG();
-
-            // if successor not on open list or g value lower than before put it on open list
-            if (!nodes2D[iSucc].isOpen() || newG < nodes2D[iSucc].getG()) {
-              // calculate the H value
-              nSucc->updateH(goal);
-
-                // if (nodes2D[iSucc].isOpen())
-                // {
-                //     if (nodes2D[iSucc].getC() <= nSucc->getC())
-                //     {
-                //         // discard new node as it already exists with lower cost
-                //         delete nSucc;
-                //         continue;
-                //     }
-                //     else
-                //     {                        
-                //         deleteNode2D(O, nodes2D[iSucc]);
-                //     }                                        
-                // }                
-  
-
-              // put successor on open list
-              nSucc->open();
-              nodes2D[iSucc] = *nSucc;
-              O.push(&nodes2D[iSucc]);
-              delete nSucc;
-            } else { delete nSucc; }
-          } else { delete nSucc; }
-        }
-      }
-    }
-  }
-
-  // return large number to guide search away
-  return 1000;
-}
-
-//###################################################
-//                                         COST TO GO
-//###################################################
-void HASAlgorithm::updateH(Node3D& start, const Node3D& goal, Node2D* nodes2D, float* dubinsLookup, int width, int height, CollisionDetection& configurationSpace, Visualization& visualization, Settings* settings, AlgorithmStats& stats) {
-    
-    auto tStart = stats.updateH.getTime();
-
-    float dubinsCost = 0;
-    float reedsSheppCost = 0;
-    float twoDCost = 0;
-    float twoDoffset = 0;
-
-    // if dubins heuristic is activated calculate the shortest path
-    // constrained without obstacles
-    if (settings->getDubinsEnabled()) {
-        ompl::base::DubinsStateSpace dubinsPath(settings->getTurningRadius());
-        State* dbStart = (State*)dubinsPath.allocState();
-        State* dbEnd = (State*)dubinsPath.allocState();
-        dbStart->setXY(start.getX(), start.getY());
-        dbStart->setYaw(start.getT());
-        dbEnd->setXY(goal.getX(), goal.getY());
-        dbEnd->setYaw(goal.getT());
-        dubinsCost = dubinsPath.distance(dbStart, dbEnd);
-    }
-
-    // if reversing is active use a
-    if (settings->getReverseEnabled() && !settings->getDubinsEnabled()) {        
-        ompl::base::ReedsSheppStateSpace reedsSheppPath(settings->getTurningRadius());
-        State* rsStart = (State*)reedsSheppPath.allocState();
-        State* rsEnd = (State*)reedsSheppPath.allocState();
-        rsStart->setXY(start.getX(), start.getY());
-        rsStart->setYaw(start.getT());
-        rsEnd->setXY(goal.getX(), goal.getY());
-        rsEnd->setYaw(goal.getT());
-        reedsSheppCost = reedsSheppPath.distance(rsStart, rsEnd);    
-    }
-
-    // if twoD heuristic is activated determine shortest path
-    // unconstrained with obstacles
-    if (settings->getTwoDEnabled() && !nodes2D[(int)start.getY() * width + (int)start.getX()].isDiscovered()) {    
-        // create a 2d start node
-        Node2D start2d(start.getX(), start.getY(), 0, 0, nullptr);
-        // create a 2d goal node
-        Node2D goal2d(goal.getX(), goal.getY(), 0, 0, nullptr);
-        // run 2d astar and return the cost of the cheapest path for that node
-        nodes2D[(int)start.getY() * width + (int)start.getX()].setG(aStar(goal2d, start2d, nodes2D, width, height, configurationSpace, visualization, settings));    
-    }
-
-    if (settings->getTwoDEnabled()) {
-        // offset for same node in cell
-        twoDoffset = sqrt(((start.getX() - (long)start.getX()) - (goal.getX() - (long)goal.getX())) * ((start.getX() - (long)start.getX()) - (goal.getX() - (long)goal.getX())) +
-                        ((start.getY() - (long)start.getY()) - (goal.getY() - (long)goal.getY())) * ((start.getY() - (long)start.getY()) - (goal.getY() - (long)goal.getY())));
-        twoDCost = nodes2D[(int)start.getY() * width + (int)start.getX()].getG() - twoDoffset;
-
-    }
-
-    // return the maximum of the heuristics, making the heuristic admissable
-    start.setH(std::max(reedsSheppCost, std::max(dubinsCost, twoDCost)));
-    stats.updateH.updateCallTime(tStart);
-}
-
-//###################################################
-//                                        DUBINS SHOT
-//###################################################
-Node3D* HASAlgorithm::dubinsShot(Node3D& start, const Node3D& goal, CollisionDetection& configurationSpace, Settings* settings) {
-  // start
-  double q0[] = { start.getX(), start.getY(), start.getT() };
-  // goal
-  double q1[] = { goal.getX(), goal.getY(), goal.getT() };
-  // initialize the path
-  DubinsPath path;
-  // calculate the path
-  dubins_init(q0, q1, settings->getTurningRadius(), &path);
-
-  int i = 0;
-  float x = 0.f;
-  float length = dubins_path_length(&path);
-
-  float dubinsStepSize = settings->getDubinsStepSize();
-
-  Node3D* dubinsNodes = new Node3D [(int)(length / dubinsStepSize) + 1];
-
-  while (x <  length) {
-    double q[3];
-    dubins_path_sample(&path, x, q);
-    dubinsNodes[i].setX(q[0]);
-    dubinsNodes[i].setY(q[1]);
-    dubinsNodes[i].setT(Helper::normalizeHeadingRad(q[2]));
-
-    // collision check
-    if (configurationSpace.isTraversable(&dubinsNodes[i])) {
-
-      // set the predecessor to the previous step
-      if (i > 0) {
-        dubinsNodes[i].setPred(&dubinsNodes[i - 1]);
-      } else {
-        dubinsNodes[i].setPred(&start);
-      }
-
-      if (&dubinsNodes[i] == dubinsNodes[i].getPred()) {
-        std::cout << "looping shot";
-      }
-
-      x += dubinsStepSize;
-      i++;
-    } else {
-      //      std::cout << "Dubins shot collided, discarding the path" << "\n";
-      // delete all nodes
-      delete [] dubinsNodes;
-      return nullptr;
-    }
-  }    
-    
-  //  std::cout << "Dubins shot connected, returning the path" << "\n";
-  return &dubinsNodes[i - 1];
+          delete nSucc;
+        } else { delete nSucc; }
+      } else { delete nSucc; }
+    } else { delete nSucc; }
 }
 
 void HASAlgorithm::dumpNodesToFile(int index, const boost::heap::binomial_heap<Node3D*,
@@ -509,34 +243,134 @@ void HASAlgorithm::checkNodes(int index, const boost::heap::binomial_heap<Node3D
         dumpNodesToFile(index, pq);
 }
 
-void HASAlgorithm::deleteNode3D(boost::heap::binomial_heap<Node3D*, boost::heap::compare<CompareNodes>>& pq, const Node3D& node)
-{    
-    for(auto it = pq.begin(); it != pq.end(); ++it)
-    {
-        Node3D* n = *it;
 
-        if (n->getIdx() == node.getIdx())
-        {
-            boost::heap::binomial_heap<Node3D*, boost::heap::compare<CompareNodes>>::handle_type h;
-            h = boost::heap::binomial_heap<Node3D*, boost::heap::compare<CompareNodes>>::s_handle_from_iterator(it);
-            pq.erase(h);           
-            return;
-        }
+Node3D* HASAlgorithm::validateRSPath(const Node3D& goal, Node3D* nPred, CollisionMap& collisionMap)
+{
+    Node3D* nSucc = nullptr;
+    ompl::base::ReedsSheppStateSpace reedsSheppPath(settings->getTurningRadius());
+    State* rsStart = (State*)reedsSheppPath.allocState();
+    State* rsEnd = (State*)reedsSheppPath.allocState();   
+    State* rsPoint = (State*)reedsSheppPath.allocState();   
+
+    rsStart->setXY(nPred->getX(), nPred->getY());
+    rsStart->setYaw(nPred->getT());
+
+    rsEnd->setXY(goal.getX(), goal.getY());
+    rsEnd->setYaw(goal.getT());    
+
+    double distance = reedsSheppPath.distance(rsStart, rsEnd);
+    distance = 1/ distance;
+
+    double d = distance;
+    bool first = true;
+    float x, y , t;
+
+    if (settings->getVisualizationEnabled())
+      rsPoses.poses.clear();
+
+    while (d < 1)
+    {
+      reedsSheppPath.interpolate(rsStart, rsEnd, d, rsPoint); 
+
+      if (first)
+      {
+        x = rsPoint->getX();
+        y = rsPoint->getY();
+        t = rsPoint->getYaw();        
+        first = false;        
+      }
+
+      if (settings->getVisualizationEnabled())
+      {
+        geometry_msgs::Pose pose;
+        pose.position.x = rsPoint->getX();
+        pose.position.y =  rsPoint->getY();
+        pose.orientation = tf::createQuaternionMsgFromYaw(rsPoint->getYaw());
+        rsPoses.poses.push_back(pose);
+      }
+
+      if (!collisionMap.isTraversable(rsPoint->getX(), rsPoint->getY(), rsPoint->getYaw()))
+      {
+        reedsSheppPath.freeState(rsStart);
+        reedsSheppPath.freeState(rsEnd);
+        reedsSheppPath.freeState(rsPoint);
+        return nullptr;
+      }
+
+      d += distance;
     }
+
+    if (settings->getVisualizationEnabled())
+    {
+      rsPoses.header.stamp = ros::Time::now();
+      pubRS.publish(rsPoses);
+    }
+
+    reedsSheppPath.freeState(rsStart);
+    reedsSheppPath.freeState(rsEnd);
+    reedsSheppPath.freeState(rsPoint);
+
+    if (t < 0)
+      t += 2 * M_PI;
+
+    bool reverse = false;
+
+    float origDistance = Helper::euclidianDistance(goal.getX(), goal.getY(), nPred->getX(), nPred->getY());
+    float newDistance = Helper::euclidianDistance(goal.getX(), goal.getY(), x, y);
+
+    if (newDistance > origDistance)
+      reverse = true;
+
+    nSucc = new Node3D(x, y, t, nPred->getG() + d, 0, nPred, settings, getDirection(reverse, nPred->getT(), t));   
+
+    return nSucc;
 }
 
-void HASAlgorithm::deleteNode2D(boost::heap::binomial_heap<Node2D*, boost::heap::compare<CompareNodes>>& pq, const Node2D& node)
-{    
-    for(auto it = pq.begin(); it != pq.end(); ++it)
-    {
-        Node2D* n = *it;
 
-        if (n->getIdx() == node.getIdx())
-        {
-            boost::heap::binomial_heap<Node2D*, boost::heap::compare<CompareNodes>>::handle_type h;
-            h = boost::heap::binomial_heap<Node2D*, boost::heap::compare<CompareNodes>>::s_handle_from_iterator(it);
-            pq.erase(h);           
-            return;
-        }
+int HASAlgorithm::getDirection(bool reverse, float tOrig, float tNew)
+{
+  //TO DO - fix 
+    int dir = 0;
+
+    if (tNew < 0 || tOrig < 0)
+    {
+        int z = 0;
     }
+
+    float tDiff = tNew - tOrig;
+
+    // check to see if potentially passing through 360 degrees
+    if (std::abs(tDiff) > M_PI)
+    {
+      if (tNew > tOrig)
+        tOrig += 2 * M_PI;
+      else
+        tNew += 2 * M_PI;
+      
+      
+      tDiff = tNew - tOrig;
+    }    
+
+    if (tDiff > 0)
+    {
+      if (reverse)
+        dir = 4;
+      else
+        dir = 1;
+    }
+    else if (tDiff < 0)
+    {
+      if (reverse)
+        dir = 5;
+      else
+        dir = 2;      
+    }
+    else
+    {
+      if (reverse)
+        dir = 3;
+    }
+
+    return dir;
+    
 }

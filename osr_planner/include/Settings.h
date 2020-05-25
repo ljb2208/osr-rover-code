@@ -1,6 +1,7 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
+#include <string>
 #include <osr_planner/PlannerSettingsConfig.h>
 
 namespace OsrPlanner {
@@ -39,10 +40,22 @@ namespace OsrPlanner {
             int getIterations() { return iterations; }
 
             int getBBSize() { return bbSize; }
+
+            std::string getRSCostFilePath() { return rsCostFilePath; }
+            float getRSExpansionFactor() { return rsExpansionFactor; }
+
+            float getVoronoiMaxDistance() { return voronoiMaxDistance; }
+            float getVoronoiAlpha() { return voronoiAlpha; }
+            float getVoronoiTheta() { return voronoiTheta; }
             
+            // R = 6, 6.75 DEG
+            float dy[3];// = { 0,        -0.0415893,  0.0415893};
+            float dx[3];// = { 0.7068582,   0.705224,   0.705224};
+            float dt[3];// = { 0,         0.1178097,   -0.1178097};
 
         private:
             void setDefaults();
+            void recalculateMoveArrays();
             int cellSize;
             bool manualMode;
             bool visualizationEnabled;
@@ -73,7 +86,14 @@ namespace OsrPlanner {
 
             int bbSize;
 
+            std::string rsCostFilePath;
+            float rsExpansionFactor;
 
+            float voronoiMaxDistance;
+            float voronoiAlpha;
+            float voronoiTheta;
+
+                
 
     };
 }
