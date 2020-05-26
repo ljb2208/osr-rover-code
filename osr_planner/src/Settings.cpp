@@ -8,6 +8,12 @@ Settings::Settings()
     setDefaults();
 }
 
+void Settings::setMapInfo(float resolution, geometry_msgs::Pose origin)
+{
+    cellSize = resolution;
+    mapOrigin = origin;
+}
+
 void Settings::setFromConfig(osr_planner::PlannerSettingsConfig &config)
 {
     manualMode = config.manual_mode;
@@ -16,7 +22,6 @@ void Settings::setFromConfig(osr_planner::PlannerSettingsConfig &config)
     visualization2DEnabled = config.visualization2D_enabled;
     visualizationDelay = config.visualization_delay;
 
-    cellSize = config.cell_size;
     penaltyTurning = config.penalty_turning;
     penaltyReversing = config.penalty_reversing;
     penaltyCOD = config.penalty_cod;
@@ -42,6 +47,17 @@ void Settings::setFromConfig(osr_planner::PlannerSettingsConfig &config)
     iterations = config.iterations;
     
     rsExpansionFactor = config.rs_expansion_factor;
+
+    voronoiMaxDistance = config.voronoi_max;
+    voronoiAlpha = config.voronoi_alpha;
+    voronoiTheta = config.voronoi_theta;
+
+    smoothAlpha = config.smooth_alpha;
+    smoothVoronoi = config.smooth_voronoi;
+    smoothObstacle = config.smooth_obstacle;
+    smoothSmooth = config.smooth_smooth;
+    smoothCurvature = config.smooth_curvature;
+    smoothIterations = config.smooth_iterations;
 
     recalculateMoveArrays();
 }
@@ -96,6 +112,13 @@ void Settings::setDefaults()
     voronoiMaxDistance = 8;
     voronoiAlpha = 0.1;
     voronoiTheta = 5;
+
+    smoothAlpha = 0.1;
+    smoothVoronoi = 0.2;
+    smoothObstacle = 0.2;
+    smoothSmooth = 0.2;
+    smoothCurvature = 0.2;
+    smoothIterations = 500;
 }
 
 void Settings::recalculateMoveArrays()

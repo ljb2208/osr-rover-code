@@ -74,6 +74,9 @@ void Planner::setMap(const nav_msgs::OccupancyGrid::Ptr map) {
 
     int height = map->info.height;
     int width = map->info.width;
+    
+    settings.setMapInfo(map->info.resolution, map->info.origin);
+
     std::vector<std::vector<bool>> binMap;
     binMap.resize(width);    
 
@@ -86,23 +89,24 @@ void Planner::setMap(const nav_msgs::OccupancyGrid::Ptr map) {
 
     collisionMap.setMap(binMap, width, height);
     heuristics.setMap(binMap, width, height);
-    // voronoiField.setMap(binMap, width, height);
     voronoiDiagram.initializeMap(width, height, binMap);
     voronoiDiagram.update();
     voronoiDiagram.visualize();    
 
     nav_msgs::OccupancyGrid occGrid;    
     occGrid.header.frame_id = "map";
-    occGrid.info.resolution = 1.0f;
+    occGrid.info.resolution = settings.getCellSize();
     occGrid.info.map_load_time = ros::Time::now();    
     occGrid.header.stamp = occGrid.info.map_load_time;
-    occGrid.info.origin.position.x = 0;
-    occGrid.info.origin.position.y = 0;
-    occGrid.info.origin.position.z = 0;
-    occGrid.info.origin.orientation.x = 0;
-    occGrid.info.origin.orientation.y = 0;
-    occGrid.info.origin.orientation.z = 0;
-    occGrid.info.origin.orientation.w = 1;
+    occGrid.info.origin = settings.getMapOrigin();
+
+    // occGrid.info.origin.position.x = 0;
+    // occGrid.info.origin.position.y = 0;
+    // occGrid.info.origin.position.z = 0;
+    // occGrid.info.origin.orientation.x = 0;
+    // occGrid.info.origin.orientation.y = 0;
+    // occGrid.info.origin.orientation.z = 0;
+    // occGrid.info.origin.orientation.w = 1;
     voronoiDiagram.getOccupancyGrid(occGrid);
 
     pubVoronoi.publish(occGrid);
@@ -223,7 +227,6 @@ void Planner::plan() {
         t = Helper::normalizeHeadingRad(t);
         Node3D nStart(x, y, t, 0, 0, nullptr, &settings);
         
-
         // ___________________________
         // START AND TIME THE PLANNING
         ros::Time t0 = ros::Time::now();
@@ -236,7 +239,7 @@ void Planner::plan() {
         // // FIND THE PATH
         AlgorithmStats stats;
         // Node3D* nSolution = Algorithm::hybridAStar(nStart, nGoal, nodes3D, nodes2D, width, height, configurationSpace, dubinsLookup, visualization, &settings, stats);
-        Node3D* nSolution = hasAlgorithm.runAlgo(nStart, nGoal, nodes3D, nodes2D, width, height, collisionMap, visualization, stats, heuristics);
+        Node3D* nSolution = hasAlgorithm.runAlgo(nStart, nGoal, nodes3D, nodes2D, width, height, voronoiDiagram, collisionMap, visualization, stats, heuristics);
 
         ros::Time t1 = ros::Time::now();
         ros::Duration d1(t1 - t0);

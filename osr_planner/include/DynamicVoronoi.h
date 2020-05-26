@@ -64,13 +64,17 @@ namespace OsrPlanner {
 
             //! returns the obstacle distance at the specified location
             float getDistance(int x, int y);
+
+            float getVEDistance( int x, int y );
+
             //! returns whether the specified cell is part of the (pruned) Voronoi graph
             bool isVoronoi(int x, int y);
             //! checks whether the specficied location is occupied
             bool isOccupied(int x, int y);
             //! write the current distance map and voronoi diagram as ppm file
             void visualize(const char* filename = "result.ppm");
-            void visualizeField(const char* filename = "field.ppm");
+            void visualizeField(const char* filename = "field.ppm");            
+            void visualizeMap(const char* filename = "map.pgm");
             void getOccupancyGrid(nav_msgs::OccupancyGrid& occGrid);
 
             void updateVDist();

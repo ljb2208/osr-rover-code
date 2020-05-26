@@ -61,7 +61,7 @@ void DynamicVoronoi::initializeEmpty(int _sizeX, int _sizeY, bool initGridMap) {
   c.voronoi = free;
   c.queueing = fwNotQueued;
   c.needsRaise = false;
-  c.vDist = INFINITY;
+  c.vDist = settings->getVoronoiMaxDistance();
 
   for (int x=0; x<sizeX; x++)
     for (int y=0; y<sizeY; y++) data[x][y] = c;
@@ -181,8 +181,8 @@ void DynamicVoronoi::updateVDist(int x, int y, int vx, int vy, std::queue<pointC
         if (distance >= data[nx][ny].vDist)
           continue; // ignore as point is closer to another voronoi cell
 
-        if (distance >= settings->getVoronoiMaxDistance())
-          continue; // ignore as point is further away than max distance
+        // if (distance >= settings->getVoronoiMaxDistance())
+        //   continue; // ignore as point is further away than max distance
         
         data[nx][ny].vDist = distance;
         data[nx][ny].vorX = vx;
@@ -339,6 +339,11 @@ void DynamicVoronoi::update(bool updateRealDist) {
 
 float DynamicVoronoi::getDistance( int x, int y ) {
   if( (x>0) && (x<sizeX) && (y>0) && (y<sizeY)) return data[x][y].dist; 
+  else return -INFINITY;
+}
+
+float DynamicVoronoi::getVEDistance( int x, int y ) {
+  if( (x>0) && (x<sizeX) && (y>0) && (y<sizeY)) return data[x][y].vDist; 
   else return -INFINITY;
 }
 
@@ -577,6 +582,33 @@ void DynamicVoronoi::visualizeField(const char *filename) {
         fputc( c, F );
         fputc( c, F );        
       }
+    }
+  }
+  fclose(F);
+}
+
+void DynamicVoronoi::visualizeMap(const char *filename) {
+  // write pgm files
+
+  FILE* F = fopen(filename, "w");
+  if (!F) {
+    std::cerr << "could not open 'result.pgm' for writing!\n";
+    return;
+  }
+  fprintf(F, "P5\n");
+  fprintf(F, "%d %d 255\n", sizeX, sizeY);
+
+  for(int y = sizeY-1; y >=0; y--){      
+    for(int x = 0; x<sizeX; x++){	
+      unsigned char c = 0;
+      if (gridMap[x][y])
+      {
+        fputc( 0, F );        
+      }
+      else
+      {
+        fputc( 255, F );        
+      }      
     }
   }
   fclose(F);

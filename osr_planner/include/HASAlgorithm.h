@@ -17,6 +17,7 @@ typedef ompl::base::SE2StateSpace::StateType State;
 #include "Heuristics.h"
 #include "Helper.h"
 #include "CollisionMap.h"
+#include "DynamicVoronoi.h"
 
 #include <ros/ros.h>
 #include <tf/transform_datatypes.h>
@@ -66,6 +67,7 @@ class HASAlgorithm {
                              Node2D* nodes2D,
                              int width,
                              int height,
+                             DynamicVoronoi& voronoiDiagram,
                              CollisionMap& collisionMap,                             
                              Visualization& visualization,                             
                              AlgorithmStats& stats,
@@ -74,7 +76,7 @@ class HASAlgorithm {
    void setSettings(Settings* settings) { this->settings = settings;}   
    void dumpNodesToFile(int index, const boost::heap::binomial_heap<Node3D*, boost::heap::compare<CompareNodes>>& pq);
    void checkNodes(int index, const boost::heap::binomial_heap<Node3D*, boost::heap::compare<CompareNodes>>& pq);   
-   void processNode(Node3D* nodes3D, const Node3D& goal, Node3D* nPred, Node3D* nSucc, int width, int height, CollisionMap& collisionMap, Heuristics& heuristics, int& iPred, bool updateG);
+   void processNode(Node3D* nodes3D, const Node3D& goal, Node3D* nPred, Node3D* nSucc, int width, int height, DynamicVoronoi& voronoiDiagram, CollisionMap& collisionMap, Heuristics& heuristics, int& iPred, bool updateG);
    Node3D* validateRSPath(const Node3D& goal, Node3D* nPred, CollisionMap& collisionMap);
 
    private:

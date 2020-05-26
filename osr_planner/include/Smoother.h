@@ -38,6 +38,11 @@ class Smoother {
       obsDMax = settings->getMinRoadWidth();
       vorObsDMax = settings->getMinRoadWidth();
       kappaMax = 1.f / (settings->getTurningRadius() * 1.1);
+      alpha = settings->getSmoothAlpha();
+      wObstacle = settings->getSmoothObstacle();
+      wCurvature = settings->getSmoothCurvature();
+      wSmoothness = settings->getSmoothSmooth();
+      wVoronoi = settings->getSmoothVoronoi();
   }
 
   /*!
@@ -60,7 +65,7 @@ class Smoother {
   Vector2D smoothnessTerm(Vector2D xim2, Vector2D xim1, Vector2D xi, Vector2D xip1, Vector2D xip2);
 
   /// voronoiCost - trade off between path length and closeness to obstaclesg
-  //   Vector2D voronoiTerm(Vector2D xi);
+  Vector2D voronoiTerm(Vector2D xi);
 
   /// a boolean test, whether vector is on the grid or not
   bool isOnGrid(Vector2D vec) {

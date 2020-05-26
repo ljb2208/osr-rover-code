@@ -71,6 +71,15 @@ Node3D* Node3D::createSuccessor(const int i) {
 //###################################################
 //                                      MOVEMENT COST
 //###################################################
+
+void Node3D::updateG(float vCost, bool updateAll)
+{
+  if (updateAll)
+    updateG();
+
+  g += vCost;
+}
+
 void Node3D::updateG() {
   // forward driving
   if (prim < 3) {
@@ -117,3 +126,4 @@ bool Node3D::operator == (const Node3D& rhs) const {
          (std::abs(t - rhs.t) <= Constants::deltaHeadingRad ||
           std::abs(t - rhs.t) >= Constants::deltaHeadingNegRad);
 }
+

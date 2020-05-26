@@ -9,6 +9,7 @@
 #include <tf/transform_listener.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <geometry_msgs/Pose.h>
 #include <dynamic_reconfigure/server.h>
 #include <osr_planner/PlannerSettingsConfig.h>
 
@@ -84,6 +85,8 @@ namespace OsrPlanner {
 
             void outputAlgoStats(AlgorithmStats& stats);
             void outputAlgoStat(std::string name, FunctionCallStats& stat);
+
+            void toMap
     };
 }
 
