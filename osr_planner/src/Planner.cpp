@@ -86,7 +86,6 @@ void Planner::setMap(const nav_msgs::OccupancyGrid::Ptr map) {
 
     collisionMap.setMap(binMap, width, height);
     heuristics.setMap(binMap, width, height);
-    // voronoiField.setMap(binMap, width, height);
     voronoiDiagram.initializeMap(width, height, binMap);
     voronoiDiagram.update();
     voronoiDiagram.visualize();    
@@ -223,7 +222,6 @@ void Planner::plan() {
         t = Helper::normalizeHeadingRad(t);
         Node3D nStart(x, y, t, 0, 0, nullptr, &settings);
         
-
         // ___________________________
         // START AND TIME THE PLANNING
         ros::Time t0 = ros::Time::now();
@@ -236,7 +234,7 @@ void Planner::plan() {
         // // FIND THE PATH
         AlgorithmStats stats;
         // Node3D* nSolution = Algorithm::hybridAStar(nStart, nGoal, nodes3D, nodes2D, width, height, configurationSpace, dubinsLookup, visualization, &settings, stats);
-        Node3D* nSolution = hasAlgorithm.runAlgo(nStart, nGoal, nodes3D, nodes2D, width, height, collisionMap, visualization, stats, heuristics);
+        Node3D* nSolution = hasAlgorithm.runAlgo(nStart, nGoal, nodes3D, nodes2D, width, height, voronoiDiagram, collisionMap, visualization, stats, heuristics);
 
         ros::Time t1 = ros::Time::now();
         ros::Duration d1(t1 - t0);

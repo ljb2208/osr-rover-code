@@ -70,7 +70,8 @@ namespace OsrPlanner {
             bool isOccupied(int x, int y);
             //! write the current distance map and voronoi diagram as ppm file
             void visualize(const char* filename = "result.ppm");
-            void visualizeField(const char* filename = "field.ppm");
+            void visualizeField(const char* filename = "field.ppm");            
+            void visualizeMap(const char* filename = "map.pgm");
             void getOccupancyGrid(nav_msgs::OccupancyGrid& occGrid);
 
             void updateVDist();

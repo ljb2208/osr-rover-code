@@ -43,6 +43,10 @@ void Settings::setFromConfig(osr_planner::PlannerSettingsConfig &config)
     
     rsExpansionFactor = config.rs_expansion_factor;
 
+    voronoiMaxDistance = config.voronoi_max;
+    voronoiAlpha = config.voronoi_alpha;
+    voronoiTheta = config.voronoi_theta;
+
     recalculateMoveArrays();
 }
 

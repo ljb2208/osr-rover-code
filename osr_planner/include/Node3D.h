@@ -81,6 +81,8 @@ class Node3D {
   /// Updates the cost-so-far for the node x' coming from its predecessor. It also discovers the node.
   void updateG();
 
+  void updateG(float vCost, bool updateAll=true);
+
   // CUSTOM OPERATORS
   /// Custom operator to compare nodes. Nodes are equal if their x and y position as well as heading is similar.
   bool operator == (const Node3D& rhs) const;

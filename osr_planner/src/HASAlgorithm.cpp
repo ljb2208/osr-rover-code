@@ -22,6 +22,7 @@ Node3D* HASAlgorithm::runAlgo(Node3D& start,
                                Node2D* nodes2D,
                                int width,
                                int height,
+                               DynamicVoronoi& voronoiDiagram,
                                CollisionMap& collisionMap,
                                Visualization& visualization,                               
                                AlgorithmStats& stats,
@@ -110,7 +111,7 @@ Node3D* HASAlgorithm::runAlgo(Node3D& start,
       for (int i = 0; i < dir; i++) {
           // create possible successor
           nSucc = nPred->createSuccessor(i);
-          processNode(nodes3D, goal, nPred, nSucc, width, height, collisionMap, heuristics, iPred, true);
+          processNode(nodes3D, goal, nPred, nSucc, width, height, voronoiDiagram, collisionMap, heuristics, iPred, true);
       }
 
       // perform Reeds Shepp expansion
@@ -121,7 +122,7 @@ Node3D* HASAlgorithm::runAlgo(Node3D& start,
 
           if (nSucc != nullptr)
           {
-            processNode(nodes3D, goal, nPred, nSucc, width, height, collisionMap, heuristics, iPred, false);
+            processNode(nodes3D, goal, nPred, nSucc, width, height, voronoiDiagram, collisionMap, heuristics, iPred, false);
             stats.rsShotsSuccessful++;
           }
       }            
@@ -135,7 +136,7 @@ Node3D* HASAlgorithm::runAlgo(Node3D& start,
   return nullptr;
 }
 
-void HASAlgorithm::processNode(Node3D* nodes3D, const Node3D& goal, Node3D* nPred, Node3D* nSucc, int width, int height, CollisionMap& collisionMap, Heuristics& heuristics, int& iPred, bool updateG)
+void HASAlgorithm::processNode(Node3D* nodes3D, const Node3D& goal, Node3D* nPred, Node3D* nSucc, int width, int height, DynamicVoronoi& voronoiDiagram, CollisionMap& collisionMap, Heuristics& heuristics, int& iPred, bool updateG)
 {    
     // set index of the successor
     int iSucc = nSucc->setIdx(width, height);
@@ -147,8 +148,9 @@ void HASAlgorithm::processNode(Node3D* nodes3D, const Node3D& goal, Node3D* nPre
       if (!nodes3D[iSucc].isClosed() || iPred == iSucc) {
 
         // calculate new G value
-        if (updateG)
-          nSucc->updateG();
+        float vCost = voronoiDiagram.getCost(nSucc->getX(), nSucc->getY());
+        
+        nSucc->updateG(vCost, updateG);
 
         float newG = nSucc->getG();
 
