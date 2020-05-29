@@ -19,6 +19,34 @@ class Node3D {
   /// The default constructor for 3D array initialization
   Node3D(): Node3D(0, 0, 0, 0, 0, nullptr, nullptr) {}
   /// Constructor for a node with the given arguments
+  Node3D(float x, float y) {
+    this->x = x;
+    this->y = y;
+    this->t = 0;
+    this->g = 0;
+    this->h = 0;
+    this->pred = nullptr;
+    this->o = false;
+    this->c = false;
+    this->idx = -1;
+    this->prim = 0;
+    this->settings = nullptr;
+  }
+
+  Node3D(float x, float y, float t) {
+    this->x = x;
+    this->y = y;
+    this->t = t;
+    this->g = 0;
+    this->h = 0;
+    this->pred = nullptr;
+    this->o = false;
+    this->c = false;
+    this->idx = -1;
+    this->prim = 0;
+    this->settings = nullptr;
+  }
+
   Node3D(float x, float y, float t, float g, float h, const Node3D* pred, Settings* settings, int prim = 0) {
     this->x = x;
     this->y = y;
@@ -56,6 +84,16 @@ class Node3D {
   bool isClosed() const { return c; }
   /// determine whether the node is open
   const Node3D* getPred() const { return pred; }
+
+  bool operator==(const Node3D &n)
+  {
+      return (x == n.x && y == n.y && t == n.t);
+  }
+
+  bool operator!=(const Node3D &n)
+  {
+      return (x != n.x || y != n.y || t != n.t);
+  }
 
   // SETTER METHODS
   /// set the x position

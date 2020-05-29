@@ -102,7 +102,7 @@ Node3D* HASAlgorithm::runAlgo(Node3D& start,
       pq.pop();
 
       // check if at goal or max iterations
-      if (*nPred == goal || iterations > maxIterations) {
+      if (nPred->reachedGoal(goal) || iterations > maxIterations) {
         // DEBUG
         return nPred;
       }
@@ -142,7 +142,7 @@ void HASAlgorithm::processNode(Node3D* nodes3D, const Node3D& goal, Node3D* nPre
     int iSucc = nSucc->setIdx(width, height);
 
     // ensure successor is on grid and traversable
-    if (nSucc->isOnGrid(width, height) && collisionMap.isTraversable(nSucc)) {
+    if (nSucc->isOnGrid(width, height) && isTraversable(nSucc, voronoiDiagram, collisionMap)) {
 
       // ensure successor is not on closed list or it has the same index as the predecessor
       if (!nodes3D[iSucc].isClosed() || iPred == iSucc) {
@@ -261,7 +261,12 @@ Node3D* HASAlgorithm::validateRSPath(const Node3D& goal, Node3D* nPred, Collisio
     rsEnd->setYaw(goal.getT());    
 
     double distance = reedsSheppPath.distance(rsStart, rsEnd);
-    distance = 1/ distance;
+
+    if (distance < 1.)
+    {
+      int q = 0;
+    }
+    distance = min(1/ distance, distance);
 
     double d = distance;
     bool first = true;
@@ -326,6 +331,15 @@ Node3D* HASAlgorithm::validateRSPath(const Node3D& goal, Node3D* nPred, Collisio
     nSucc = new Node3D(x, y, t, nPred->getG() + d, 0, nPred, settings, getDirection(reverse, nPred->getT(), t));   
 
     return nSucc;
+}
+
+bool HASAlgorithm::isTraversable(Node3D* node, DynamicVoronoi& voronoiDiagram, CollisionMap& collisionMap)
+{
+   if (voronoiDiagram.getDistance(node->getX(), node->getY()) > collisionMap.getMaxVehDistance())
+    return true;
+
+  return collisionMap.isTraversable(node);
+
 }
 
 

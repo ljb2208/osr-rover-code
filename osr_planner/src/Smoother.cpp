@@ -1,5 +1,8 @@
 #include "Smoother.h"
 
+#include <iostream>
+#include <fstream>
+
 using namespace OsrPlanner
 ;
 //###################################################
@@ -24,12 +27,18 @@ void Smoother::smoothPath(DynamicVoronoi& voronoi) {
   this->voronoi = voronoi;
   this->width = voronoi.getSizeX();
   this->height = voronoi.getSizeY();
+
+  obsDMax = settings->getMinRoadWidth() / settings->getCellSize();
+  vorObsDMax = settings->getMinRoadWidth() / settings->getCellSize();
+
   // current number of iterations of the gradient descent smoother
   int iterations = 0;
   // the maximum iterations for the gd smoother
   int maxIterations = settings->getSmoothIterations(); //500;
   // the lenght of the path in number of nodes
   int pathLength = 0;
+
+  outputPath("presmooth.csv");
 
   // path objects with all nodes oldPath the original, newPath the resulting smoothed path
   pathLength = path.size();
@@ -49,23 +58,6 @@ void Smoother::smoothPath(DynamicVoronoi& voronoi) {
       Vector2D xip1(newPath[i + 1].getX(), newPath[i + 1].getY());
       Vector2D xip2(newPath[i + 2].getX(), newPath[i + 2].getY());
       Vector2D correction;
-
-      if (iterations == 0)
-      {
-        std::cout << newPath[i - 2].getX() << "," <<  newPath[i - 2].getY() << "," << newPath[i - 2].getT() << ",";
-        std::cout << newPath[i - 1].getX() << "," <<  newPath[i - 1].getY() << "," << newPath[i - 1].getT() << ",";
-        std::cout << newPath[i].getX() << "," <<  newPath[i].getY() << "," << newPath[i].getT() << ",";
-        std::cout << newPath[i + 1].getX() << "," <<  newPath[i + 1].getY() << "," << newPath[i + 1].getT() << ",";
-        std::cout << newPath[i + 2].getX() << "," <<  newPath[i + 2].getY() << "," << newPath[i + 2].getT() << ",";
-        std::cout << voronoi.data[(int)xi.getX()][(int)xi.getY()].obstX << ",";
-        std::cout << voronoi.data[(int)xi.getX()][(int)xi.getY()].obstY << ",";
-        std::cout << voronoi.getDistance((int)xi.getX(),(int)xi.getY()) << ",";
-        std::cout << voronoi.data[(int)xi.getX()][(int)xi.getY()].vorX << ",";
-        std::cout << voronoi.data[(int)xi.getX()][(int)xi.getY()].vorY << ",";
-        std::cout << voronoi.getVEDistance((int)xi.getX(),(int)xi.getY()) << "\n";
-
-      }
-
 
       // the following points shall not be smoothed
       // keep these points fixed if they are a cusp point or adjacent to one
@@ -96,9 +88,32 @@ void Smoother::smoothPath(DynamicVoronoi& voronoi) {
     }
 
     iterations++;
-  }
+  }  
 
   path = newPath;
+
+  outputPath("postsmooth.csv");
+}
+
+void Smoother::outputPath(std::string filename)
+{
+    std::ofstream outFile;
+    outFile.open(filename);
+
+    outFile << "x,y,t,obstX,obstY,obstDist,vorX,vorY,vorDist\n";
+
+    for (size_t i=0; i < path.size(); ++i)
+    {
+        outFile << path[i].getX() << "," <<  path[i].getY() << "," << path[i].getT() << ",";        
+        outFile << voronoi.data[(int)path[i].getX()][(int)path[i].getY()].obstX << ",";
+        outFile << voronoi.data[(int)path[i].getX()][(int)path[i].getY()].obstY << ",";
+        outFile << voronoi.getDistance((int)path[i].getX(),(int)path[i].getY()) << ",";
+        outFile << voronoi.data[(int)path[i].getX()][(int)path[i].getY()].vorX << ",";
+        outFile << voronoi.data[(int)path[i].getX()][(int)path[i].getY()].vorY << ",";
+        outFile << voronoi.getVEDistance((int)path[i].getX(),(int)path[i].getY()) << "\n";
+    }
+
+    outFile.close();
 }
 
 void Smoother::tracePath(const Node3D* node, int i, std::vector<Node3D> path) {
@@ -111,6 +126,7 @@ void Smoother::tracePath(const Node3D* node, int i, std::vector<Node3D> path) {
   path.push_back(*node);
   tracePath(node->getPred(), i, path);
 }
+
 
 //###################################################
 //                                      OBSTACLE TERM

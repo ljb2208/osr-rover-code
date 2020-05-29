@@ -29,6 +29,7 @@ generate_dynamic_reconfigure_options(
 )
 
 set(SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/PostSmoothing.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/VoronoiField.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Heuristics.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/HASAlgorithm.cpp
@@ -44,9 +45,10 @@ set(SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Visualization.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Dubins.cpp #Andrew Walker
     ${CMAKE_CURRENT_SOURCE_DIR}/src/DynamicVoronoi.cpp #Boris Lau, Christoph Sprunk, Wolfram Burgard
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/BucketedQueue.cpp #Boris Lau, Christoph Sprunk, Wolfram Burgard
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/BucketedQueue.cpp #Boris Lau, Christoph Sprunk, Wolfram Burgard    
     )
 set(HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/PostSmoothing.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/VoronoiField.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/Heuristics.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/HASAlgorithm.h

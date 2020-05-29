@@ -39,6 +39,7 @@ void Planner::updateSettings()
     visualization.setSettings(&settings);
     path.setSettings(&settings);
     smoothedPath.setSettings(&settings);
+    gradientPath.setSettings(&settings);
     smoother.setSettings(&settings);
     heuristics.setSettings(&settings);    
     hasAlgorithm.setSettings(&settings);
@@ -236,6 +237,8 @@ void Planner::plan() {
         // CLEAR THE PATH
         path.clear();
         smoothedPath.clear();
+        gradientPath.clear();
+
         // // FIND THE PATH
         AlgorithmStats stats;
         // Node3D* nSolution = Algorithm::hybridAStar(nStart, nGoal, nodes3D, nodes2D, width, height, configurationSpace, dubinsLookup, visualization, &settings, stats);
@@ -251,13 +254,30 @@ void Planner::plan() {
             ROS_WARN("No solution found");
         }
         // // TRACE THE PATH
-        smoother.tracePath(nSolution);
+        // smoother.tracePath(nSolution);
+
+        ROS_INFO("Validate path pre smoothing");
+        validatePath();
+
+        postSmoother.setSettings(&settings);
+        postSmoother.setVoronoi(&voronoiDiagram);
+        postSmoother.setCollisionMap(&collisionMap);
+
+        postSmoother.tracePath(nSolution);        
+
         // CREATE THE UPDATED PATH
-        path.updatePath(smoother.getPath());
+        // path.updatePath(smoother.getPath());
+        path.updatePath(postSmoother.getPath());
+
+        postSmoother.smooth(postSmoother.getPath());
+
         // SMOOTH THE PATH
-        smoother.smoothPath(voronoiDiagram);
+        // smoother.smoothPath(voronoiDiagram);
+
         // CREATE THE UPDATED PATH
-        smoothedPath.updatePath(smoother.getPath());
+        // smoothedPath.updatePath(smoother.getPath());
+        gradientPath.updatePath(postSmoother.getGradientPath());
+        smoothedPath.updatePath(postSmoother.getPath());
         ros::Time t2 = ros::Time::now();
         ros::Duration d2(t2 - t1);
         ROS_INFO_STREAM("Trace and smooth time: " << d2 * 1000);
@@ -274,6 +294,9 @@ void Planner::plan() {
         smoothedPath.publishPath();
         smoothedPath.publishPathNodes();
         smoothedPath.publishPathVehicles();
+        gradientPath.publishPath();
+        gradientPath.publishPathNodes();
+        gradientPath.publishPathVehicles();
         visualization.publishNode3DCosts(nodes3D, width, height, depth);
         visualization.publishNode2DCosts(nodes2D, width, height);
         ros::Time t4 = ros::Time::now();
@@ -281,6 +304,8 @@ void Planner::plan() {
         ros::Duration d4(t4 - t3);
         ROS_INFO_STREAM("Total publishing time: " << d4 * 1000);      
 
+        ROS_INFO("Validate path post smoothing");
+        validatePath();
         outputAlgoStats(stats);        
 
         delete [] nodes3D;
@@ -289,6 +314,34 @@ void Planner::plan() {
     } else {
         ROS_WARN("missing goal or start");
     }
+}
+
+void Planner::validatePath()
+{
+    std::vector<Node3D> path = smoother.getPath();
+
+    bool valid = true;
+
+    for (size_t i=0; i < path.size(); ++i)
+    {
+        valid &= validateNode(path[i]);
+    }    
+
+    if (valid == true)
+        ROS_INFO_STREAM("Path is valid");
+    else
+        ROS_INFO_STREAM("Path is NOT valid");
+}
+
+bool Planner::validateNode(const Node3D& node)
+{
+    bool valid = collisionMap.isTraversable(node.getX(), node.getY(), node.getT());
+
+    if (!valid)
+    {
+        ROS_INFO_STREAM("Invalid Node at " << node.getX() << "/" << node.getY() << "/" << node.getT());
+    }
+    return valid;
 }
 
 void Planner::outputAlgoStats(AlgorithmStats& stats)

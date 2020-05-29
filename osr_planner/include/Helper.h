@@ -42,6 +42,7 @@ namespace OsrPlanner {
             val = std::max(val, v3);
             return std::max(val, v4);
         }
+        
     }
 }
 

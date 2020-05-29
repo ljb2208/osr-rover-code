@@ -31,6 +31,7 @@
 #include "Heuristics.h"
 #include "HASAlgorithm.h"
 #include "VoronoiField.h"
+#include "PostSmoothing.h"
 
 namespace OsrPlanner {
     class Planner {
@@ -74,11 +75,13 @@ namespace OsrPlanner {
             Visualization visualization;
             Path path;
             Path smoothedPath = Path(true);
+            Path gradientPath = Path(true, true);
             Smoother smoother;
             Heuristics heuristics;
             HASAlgorithm hasAlgorithm;
             CollisionMap collisionMap;
             VoronoiField voronoiField;
+            PostSmoothing postSmoother;
 
             Constants::config collisionLookup[Constants::headings * Constants::positions];
             float * dubinsLookup = NULL;
@@ -86,7 +89,9 @@ namespace OsrPlanner {
             void outputAlgoStats(AlgorithmStats& stats);
             void outputAlgoStat(std::string name, FunctionCallStats& stat);
 
-            void toMap
+            void validatePath();
+            bool validateNode(const Node3D& node);
+            
     };
 }
 

@@ -4,6 +4,7 @@
 #include <string>
 #include <osr_planner/PlannerSettingsConfig.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <ros/ros.h>
 
 namespace OsrPlanner {
 
@@ -31,7 +32,7 @@ namespace OsrPlanner {
             float getLength() { return length; }
             float getWidth() { return width; }
             float getBloating() { return bloating; }
-            float getTurningRadius() { return turningRadius; }
+            float getTurningRadius() { return turningRadius / cellSize; }
             float getMinRoadWidth() { return minRoadWidth; }
 
             bool getReverseEnabled() { return reverseEnabled; }
@@ -57,6 +58,12 @@ namespace OsrPlanner {
             float getSmoothCurvature() { return smoothCurvature; }    
             int getSmoothIterations() { return smoothIterations; }
 
+            double getGripsMinNodeDistance() { return gripsMinNodeDistance; }
+            double getGripsEta() { return gripsEta; }
+            double getGripsEtaDiscount() { return gripsEtaDiscount; }
+            int getGripsGradientDescentRounds() { return gripsGradientDescentRounds; }
+            int getGripsMaxPruningRounds() { return gripsMaxPruningRounds; }
+
             geometry_msgs::Pose getMapOrigin() { return mapOrigin; }
             
             // R = 6, 6.75 DEG
@@ -66,7 +73,7 @@ namespace OsrPlanner {
 
         private:
             void setDefaults();
-            void recalculateMoveArrays();
+            void recalculateMoveArrays();            
             float cellSize;
             bool manualMode;
             bool visualizationEnabled;
@@ -113,6 +120,15 @@ namespace OsrPlanner {
             int smoothIterations;
 
             geometry_msgs::Pose mapOrigin;
+
+
+            // GRIPS settings
+            double gripsMinNodeDistance = 3;
+            double gripsEta = 0.5;
+            double gripsEtaDiscount = 0.8;
+            int gripsGradientDescentRounds = 5;
+            int gripsMaxPruningRounds = 100;
+
 
     };
 }

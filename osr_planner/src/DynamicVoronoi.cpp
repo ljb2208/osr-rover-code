@@ -29,7 +29,11 @@ float DynamicVoronoi::getCost(int x, int y)
     float odist = data[x][y].dist;
     float vdist = data[x][y].vDist;        
 
-    float pv = (alpha/(alpha + odist))*(vdist/(odist + vdist))* thetaAdj;
+    if (odist > settings->getVoronoiMaxDistance())
+      return 0.0;
+
+    // float pv = (alpha/(alpha + odist))*(vdist/(odist + vdist))* thetaAdj;
+    float pv = (alpha/(alpha + odist))*(vdist/(odist + vdist)) * pow(odist - settings->getVoronoiMaxDistance(), 2) / pow(settings->getVoronoiMaxDistance(), 2);
     return pv;
 }
 

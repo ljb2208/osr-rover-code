@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import math
+import numpy as np
 
 
 class Point():
@@ -87,49 +88,185 @@ class Smoother():
     def loadData(self):
         self.points = []
 
-        f = open("/home/lbarnett/catkin_ws/src/osr-rover-code/osr_planner/test/points.txt", "r")
+        f = open("/home/lbarnett/catkin_ws/src/osr-rover-code/osr_planner/test/presmooth.csv", "r")
 
         for line in f:
             data = line.split(",")
-            pt = Point(data[6], data[7], data[8], data[15], data[16], data[17], data[18], data[19], data[20])
+
+            if (data[0] == "x"):
+                continue
+            pt = Point(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8])
             self.points.append(pt)
 
     def smooth2(self):
         tolerance = 0.000001
-        weight_data = 0.3
-        weight_smooth = 0.3
-        weight_obs = 0.3
+        weight_data = 0.0
+        weight_smooth = 0.0
+        weight_obs = 0.0
+        weight_vor = 0.0
+        weight_curve = 0.2
 
-        dMax = 5
+        dMax = 10
+        maxIterations = 500
+        iterations = 0
 
         change = tolerance        
 
-        while change >= tolerance:
+        # self.calcVoronoi(0, 10)
+        # # self.calcVoronoi(10, 0)
+        # self.calcVoronoi(0, 5)
+        # self.calcVoronoi(5, 5)
+        # self.calcVoronoi(2, 5)
+        # self.calcVoronoi(2, 10)
+
+
+        while change >= tolerance and iterations < maxIterations:
             change = 0.0
 
             for i in range(1, len(self.points) -1):
                 xpre = self.points[i].x
                 ypre = self.points[i].y
 
-                self.getCurve(i)
+                # self.getCurve(i)
 
+                #path length
                 self.points[i].x += weight_data * (self.points[i].origX - self.points[i].x)
                 self.points[i].y += weight_data * (self.points[i].origY - self.points[i].y)
 
+                #smoothing
                 self.points[i].x += weight_smooth * (self.points[i-1].x + self.points[i+1].x - (2.0 * self.points[i].x))
                 self.points[i].y += weight_smooth * (self.points[i-1].y + self.points[i+1].y - (2.0 * self.points[i].y))
 
-                obsV = Vector2D(self.points[i].x - self.points[i].obstX, self.points[i].y - self.points[i].obstY)
+                #obstacle avoidance
+                obsV = Vector2D(self.points[i].x - self.points[i].obstX, self.points[i].y - self.points[i].obstY)                
 
                 if (obsV.length() < dMax):
-                    self.points[i].x += weight_obs * (obsV.x)
-                    self.points[i].y += weight_obs * (obsV.y)
+                    pt = 2 * obsV * (obsV.length() - dMax) / obsV.length()
+                    self.points[i].x -= weight_obs * pt.x
+                    self.points[i].y -= weight_obs * pt.y                
+
+                if (obsV.length() < dMax):
+                    pt = self.getVoronoiTerm2(self.points[i])
+                    self.points[i].x -= weight_vor * pt.x
+                    self.points[i].y -= weight_vor * pt.y
+
+                #curvature
+                curve = self.getCurvatureTerm(self.points[i], self.points[i-1], self.points[i+1], weight_curve)
+
+                self.points[i].x -= curve.x
+                self.points[i].y -= curve.y
 
                 change += abs(xpre - self.points[i].x)
                 change += abs(ypre - self.points[i].y)
 
+            iterations += 1
                 
+        
+        self.calcMaxTurningAngle()
         self.plot()
+
+    def calcMaxTurningAngle(self):
+
+        for i in range(1, len(self.points) -1):
+            dy = self.points[i].y - self.points[i-1].y
+            dx = self.points[i].x - self.points[i-1].x
+            dya = self.points[i+1].y - self.points[i].y
+            dxa = self.points[i+1].x - self.points[i].x
+
+            angle = math.atan(dya/dxa) - math.atan(dy/dx)
+            dangle = math.degrees(angle)
+
+            if (abs(dangle) > 50):
+                x = 0
+
+            dxi = Vector2D(self.points[i].x - self.points[i-1].x, self.points[i].y - self.points[i-1].y)
+            dxia = Vector2D(self.points[i+1].x - self.points[i].x, self.points[i+1].y - self.points[i].y)
+
+            dxit = Vector2D(dxi.y, dxi.x)
+
+            # val = (dxi.dot(dxia)) / (dxi.length() * dxia.length())
+
+            # nangle = math.acos(val)
+
+            vdxi = np.array([dxi.x, dxi.y])[np.newaxis]
+            vdxia = np.array([dxia.x, dxia.y])[np.newaxis]
+
+            
+            vdxit = vdxi.T
+
+            test = np.linalg.norm(vdxia)
+            test2 = dxia.length()
+
+            val2 = vdxit * vdxia / (np.linalg.norm(vdxia) * np.linalg.norm(vdxi))
+            val3 = np.arccos(val2)
+
+            test5 = np.linalg.norm(val2)
+            test6 = (np.linalg.norm(vdxia) * np.linalg.norm(vdxi))
+
+            test3 = np.trace(val2)
+            test4 = math.degrees(test3)
+
+
+            print("angle: " + str(angle) + " degrees: " + str(dangle))#  + " val2: " + str(val2) + " val3: " + str(val3))
+
+            p1 = dxi.ort(-dxia)/(dxi.length() * dxia.length())
+            p2 = -dxia.ort(dxi)/(dxi.length() * dxia.length())
+            p3 = -p1 - p2
+
+            #print("orth p1: " + str(p1) + " p2: " + str(p2) + " p3: " + str(p3))
+
+
+    def calcVoronoi(self, do, dv):
+        alpha = 10.
+        dMax = 10.      
+
+        if (do > dMax):
+            print("nothing to calc")
+            return
+
+        test = alpha/(alpha + do)
+        test1 =  (dv / (do + dv))
+        test2 = math.pow(do - dMax, 2) / math.pow(dMax, 2)
+        
+        pv = test1 * test2 * test
+
+        print("Distance to obst: " + str(do) + " to vor: " + str(dv) + " pv: " + str(pv))
+
+    def getVoronoiTerm2(self, point):
+        alpha = 50.
+        
+        dMax = 10.
+
+        xioi = Vector2D(point.x - point.obstX, point.y - point.obstY)        
+        xivi = Vector2D(point.x - point.vX, point.y - point.vY)
+
+        omega = xioi.length()
+        xioi_len = xioi.length()
+        xivi_len = xivi.length()
+
+        do_dxi = xioi / xioi_len
+        dv_dxi = xivi / xivi_len
+        dpv_dv = alpha / (alpha + xioi_len) * math.pow(xioi_len - dMax, 2)/math.pow(dMax, 2) * xioi_len/math.pow(xioi_len + xivi_len, 2)
+        dpv_do = alpha / (alpha + xioi_len) * xivi_len / (xioi_len + xivi_len) * (xioi_len - dMax) / math.pow(dMax, 2)
+        
+        term2 = -(xioi_len - dMax) / (alpha+xioi_len) - (xioi_len - dMax) / (xioi_len + xivi_len) + 2
+
+        top = alpha * xivi_len * ((xivi_len + 2 * dMax + alpha) * xioi_len + (dMax + 2 * alpha) * xivi_len + alpha * dMax)
+        bottom = math.pow(dMax, 2) * math.pow(xioi_len + alpha, 2) * math.pow(xioi_len + xivi_len, 2)
+
+        newterm = top/bottom
+
+        dpv_do = dpv_do * term2
+                
+        # dpv_do = alpha / (alpha + xioi.length()) * xivi.length()/ (xioi.length() + xivi.length()) * math.pow(xioi.length() - dMax, 2) / math.pow(dMax, 2)
+        # dpv_do = dpv_do * (-(omega - dMax)/(alpha + omega) - (omega - dMax) / ())
+
+        term = dpv_do*do_dxi + dpv_dv * dv_dxi
+        newtermout = newterm * do_dxi + dpv_dv * dv_dxi
+        
+        return -newtermout
+
+
                 
 
     def getCurve(self, i):
@@ -158,7 +295,7 @@ class Smoother():
         wObstacle = 0.0
         wSmoothness = 0.0
         wCurvature = 0.2
-        wVoronoi = 0.2
+        wVoronoi = 0.0
 
         pointCount = len(self.points)
         iteration = 0
@@ -194,6 +331,8 @@ class Smoother():
             iteration += 1
 
         self.plot()
+    
+
 
     def getSmoothTerm(self, point, i, wSmoothness):        
 
@@ -295,15 +434,32 @@ class Smoother():
         dxi = v - vb
         dxia = va - v
 
+        kappaMax = 1./ 2.5
+
+        dPhi = math.atan(dxia.y/dxia.x) - math.atan(dxi.y/dxi.x)
+        # dPhi = math.acos(dxi.dot(dxia)) / (dxi.length() * dxia.length())        
+        # kappa = dPhi / dxi.length()
+        kappa = abs(dPhi)
+
+        if (kappa < kappaMax):
+            return Vector2D(0., 0.)
+
+
         absDxi = dxi.length()        
         absDxia = dxia.length()
         invAbsDxi = 1. / absDxi
 
-        ones = Vector2D(1., 1.)
+        ones = Vector2D(1., 1.)        
 
-        dPhi = math.acos(dxi.dot(dxia) / (absDxi * absDxia))
+        vdxi = np.array([dxi.x, dxi.y])[np.newaxis]
+        vdxia = np.array([dxia.x, dxia.y])[np.newaxis]
 
-        pDPhi_pDCosDPhi = -1. / math.sqrt((1 - math.pow(math.cos(dPhi), 2)))
+        chgangle = (np.transpose(vdxi) * vdxia) / (absDxi * absDxia)
+        chgangle = np.arccos(chgangle)
+
+
+        #pDPhi_pDCosDPhi = -1. / math.sqrt((1 - math.pow(math.cos(dPhi), 2)))
+        pDPhi_pDCosDPhi = -1. / np.sqrt((1 - np.power(np.cos(chgangle), 2)))
 
         dxixi = dxi / absDxi
         dxixib = dxi / absDxi
@@ -363,19 +519,48 @@ class Smoother():
         x_orig = []
         y_orig = []
 
+        x_min = 1000
+        x_max = 0
+
+        y_min = 1000
+        y_max = 0
+
         for pt in self.points:
             x.append(pt.x)
             y.append(pt.y)
             x_orig.append(pt.origX)
             y_orig.append(pt.origY)
+
+            if pt.x > x_max:
+                x_max = pt.x
+            
+            if pt.x < x_min:
+                x_min = pt.x
+
+            if pt.y > y_max:
+                y_max = pt.y
+            
+            if pt.y < y_min:
+                y_min = pt.y
+
+        x_min -= 10
+        x_max += 10
+
+        y_min -= 10
+        y_max += 10
+
+        rMin = min(x_min, y_min)
+        rMax = max(x_max, y_max)
+        
+
         
         plt.plot(x, y, x_orig, y_orig)
-        plt.axis([0, 80, 0, 80])
+        plt.axis([rMin, rMax, rMin, rMax])
         plt.show()
 
 
 if __name__ == '__main__':
-    smoother= Smoother()
+    smoother= Smoother()    
 
     smoother.smooth2()
     print("done")

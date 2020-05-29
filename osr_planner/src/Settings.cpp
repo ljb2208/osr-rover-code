@@ -64,6 +64,7 @@ void Settings::setFromConfig(osr_planner::PlannerSettingsConfig &config)
 
 void Settings::setDefaults()
 {
+    
     manualMode = true;
     reverseEnabled = true;
     visualizationEnabled = true;
@@ -86,14 +87,15 @@ void Settings::setDefaults()
 
     twoD = true;
 
-    bloating = 0;
-    length = 2.65;
-    width = 1.65;
-    turningRadius = 6;
+    ros::param::param<float>("min_road_width", minRoadWidth, 0.6);
+    ros::param::param<float>("length", length, 0.7);
+    ros::param::param<float>("width", width, 0.45);
+    ros::param::param<float>("bloating", bloating, 0.0);
+    ros::param::param<float>("turn_radius", turningRadius, 2.0);
 
     bbSize = std::ceil((sqrt(width * width + length* length) + 4) / cellSize);
 
-    minRoadWidth = 2;
+        
 
     iterations = 30000;
 
@@ -110,7 +112,7 @@ void Settings::setDefaults()
     dt[2] = -0.1178097;
 
     voronoiMaxDistance = 8;
-    voronoiAlpha = 0.1;
+    voronoiAlpha = 10;
     voronoiTheta = 5;
 
     smoothAlpha = 0.1;
@@ -119,6 +121,14 @@ void Settings::setDefaults()
     smoothSmooth = 0.2;
     smoothCurvature = 0.2;
     smoothIterations = 500;
+
+    // GRIPS settings
+    gripsMinNodeDistance = 3;
+    gripsEta = 0.5;
+    gripsEtaDiscount = 0.8;
+    gripsGradientDescentRounds = 5;
+    gripsMaxPruningRounds = 100;
+
 }
 
 void Settings::recalculateMoveArrays()

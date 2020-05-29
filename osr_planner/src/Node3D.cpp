@@ -112,6 +112,19 @@ void Node3D::updateG() {
 }
 
 bool Node3D::reachedGoal(const Node3D& goal) {
+    float distance = Helper::euclidianDistance(goal.getX(), goal.getY(), x, y);
+
+    float x_val = std::abs(goal.x - x);
+    float y_val = std::abs(goal.y - y);
+
+    if (x_val <= 1.0 && y_val <= 1.0)
+    {
+      int q= 0;
+    }
+
+    return distance <= 0.5 && (std::abs(t - goal.t) <= Constants::deltaHeadingRad ||
+          std::abs(t - goal.t) >= Constants::deltaHeadingNegRad);
+
     return (int)(x + 0.5) == (int)(goal.x + 0.5) &&
          (int)(y + 0.5) == (int)(goal.y + 0.5) &&
          (std::abs(t - goal.t) <= Constants::deltaHeadingRad ||

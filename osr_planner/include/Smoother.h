@@ -35,8 +35,8 @@ class Smoother {
   void setSettings(Settings* settings) 
   { 
       this->settings = settings;
-      obsDMax = settings->getMinRoadWidth();
-      vorObsDMax = settings->getMinRoadWidth();
+      obsDMax = settings->getMinRoadWidth() / settings->getCellSize();
+      vorObsDMax = settings->getMinRoadWidth() / settings->getCellSize();
       kappaMax = 1.f / (settings->getTurningRadius() * 1.1);
       alpha = settings->getSmoothAlpha();
       wObstacle = settings->getSmoothObstacle();
@@ -74,9 +74,11 @@ class Smoother {
       return true;
     }
     return false;
-  }
+  }  
 
  private:
+   void outputPath(std::string filename);
+
   /// maximum possible curvature of the non-holonomic vehicle
   float kappaMax = 0;
   /// maximum distance to obstacles that is penalized

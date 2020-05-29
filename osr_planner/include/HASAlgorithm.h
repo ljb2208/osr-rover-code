@@ -89,6 +89,7 @@ class HASAlgorithm {
          ros::Publisher pubRS;            
          geometry_msgs::PoseArray rsPoses;         
          int getDirection(bool reverse, float tOrig, float tNew);
+         bool isTraversable(Node3D* node, DynamicVoronoi& voronoiDiagram, CollisionMap& collisionMap);
 
 };
 }

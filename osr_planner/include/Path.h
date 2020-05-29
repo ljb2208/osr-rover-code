@@ -24,23 +24,35 @@ namespace OsrPlanner {
 class Path {
  public:
   /// The default constructor initializing the path object and setting publishers for the same.
-  Path(bool smoothed = false) {
-    std::string pathTopic = "/path";
+  Path(bool smoothed = false, bool gradient=false) {
+    std::string pathTopic = "/path";    
     std::string pathNodesTopic = "/pathNodes";
     std::string pathVehicleTopic = "/pathVehicle";
 
     if (smoothed) {
-      pathTopic = "/sPath";
-      pathNodesTopic = "/sPathNodes";
-      pathVehicleTopic = "/sPathVehicle";
-      this->smoothed = smoothed;
+       if (gradient)
+       {
+         pathTopic = "/gPath";      
+         pathNodesTopic = "/gPathNodes";
+         pathVehicleTopic = "/gPathVehicle";          
+       }
+       else
+       {
+         pathTopic = "/sPath";      
+         pathNodesTopic = "/sPathNodes";
+         pathVehicleTopic = "/sPathVehicle";         
+       }
+       
+       this->smoothed = smoothed;    
+       this->gradient = gradient;      
     }
 
     // _________________
     // TOPICS TO PUBLISH
-    pubPath = n.advertise<nav_msgs::Path>(pathTopic, 1);
-    pubPathNodes = n.advertise<visualization_msgs::MarkerArray>(pathNodesTopic, 1);
-    pubPathVehicles = n.advertise<visualization_msgs::MarkerArray>(pathVehicleTopic, 1);
+   pubPath = n.advertise<nav_msgs::Path>(pathTopic, 1);
+    
+   pubPathNodes = n.advertise<visualization_msgs::MarkerArray>(pathNodesTopic, 1);
+   pubPathVehicles = n.advertise<visualization_msgs::MarkerArray>(pathVehicleTopic, 1);    
 
     // CONFIGURE THE CONTAINER
     path.header.frame_id = "path";
@@ -90,7 +102,7 @@ class Path {
   /// Publishes the vehicle along the path
   void publishPathVehicles() { pubPathVehicles.publish(pathVehicles); }
 
-  void setSettings(Settings* settings) { this-> settings = settings;}
+  void setSettings(Settings* settings) { this-> settings = settings;}  
 
  private:
   /// A handle to the ROS node
@@ -109,6 +121,7 @@ class Path {
   visualization_msgs::MarkerArray pathVehicles;
   /// Value that indicates that the path is smoothed/post processed
   bool smoothed = false;
+  bool gradient = false;  
 
   Settings* settings;
 };

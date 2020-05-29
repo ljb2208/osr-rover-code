@@ -35,7 +35,13 @@ namespace OsrPlanner {
             bool isTraversable(float x, float y, float t);
             bool isTraversable(Node3D* node);
 
+            int getMapWidth() { return width; }
+            int getMapHeight() { return height; }
+            float getMaxVehDistance() { return maxVehDistance; }
+
         private:
+            void calculateVehicleBounds();
+
             vector<vector<bool>> binMap;
             Settings* settings;
             int width;
@@ -45,7 +51,8 @@ namespace OsrPlanner {
             float vehWidth;
             float halfVehLength;
             float halfVehWidth;
-            CMPoint vehPoints[4];                    
+            float maxVehDistance;
+            vector<CMPoint> vehPoints;                           
     };
 }
 

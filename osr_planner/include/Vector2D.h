@@ -26,6 +26,12 @@ class Vector2D {
   friend std::ostream& operator<<(std::ostream& os, const Vector2D& b) {os << "(" << b.x << "|" << b.y << ")"; return os; }
   /// a method to calculate the length of the vector
   float length() const { return std::sqrt(std::pow(x, 2) + std::pow(y, 2)); }
+
+  float distance(double _x, double _y) const
+  {
+      return std::sqrt(std::pow(_x-x, 2.) + std::pow(_y-y, 2.));
+  }
+
   /// a method to calculate the length of the vector
   float sqlength() const { return x*x + y*y; }
   /// a method to calculate the dot product of two vectors
