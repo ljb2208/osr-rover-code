@@ -1,7 +1,0 @@
-<launch>
- <!-- Turn on hybrid_astar node -->
- <node name="osr_planner" pkg="osr_planner" type="osr_planner" output="screen"/> 
- <node name="tf_broadcaster" pkg="hybrid_astar" type="tf_broadcaster" />
- <node name="map_server" pkg="map_server" type="map_server" args="$(find osr_planner)/maps/map.yaml" />
- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find osr_planner)/launch/config.rviz" />
-</launch>

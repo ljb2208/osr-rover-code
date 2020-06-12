@@ -1,6 +1,0 @@
-<launch>    
-    <node name="osr_planner" pkg="osr_planning" type="osr_planner.py" output="screen" /> 
-    <!-- <node name="tf_broadcaster" pkg="osr_planning" type="tf_broadcaster.py" /> -->
-    <node name="map_server" pkg="map_server" type="map_server" args="$(find osr_planning)/maps/map.yaml" />
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find osr_planning)/launch/config.rviz" />
-</launch>
