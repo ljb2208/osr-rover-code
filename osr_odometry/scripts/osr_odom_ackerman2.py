@@ -182,7 +182,8 @@ if __name__ == '__main__':
     rospy.loginfo("Starting the osr odometry2 node")	
 
     baseFrame = rospy.get_param("/odometry/base_frame_id", "base_link")
-    mpt = rospy.get_param("/odometry/mpt", 0.000026322)
+    # mpt = rospy.get_param("/odometry/mpt", 0.000026322)
+    mpt = rospy.get_param("/odometry/mpt",  0.000045777)     
     wheelTrack = rospy.get_param("/odometry/wheel_track", 0.455)
     d4 = rospy.get_param("/odometry/d4", 0.2559)
     maxTickPerSec = rospy.get_param("/odometry/maxTickPerSec", 8000)        

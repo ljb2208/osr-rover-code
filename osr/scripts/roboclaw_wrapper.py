@@ -45,7 +45,7 @@ class MotorControllers(object):
 		if version != 0:
 			rospy.loginfo("Sucessfully connected to RoboClaw motor controllers")
 		else:
-			rospy.logerror("Unable to establish connection to Roboclaw motor controllers")
+			rospy.logerr("Unable to establish connection to Roboclaw motor controllers")
 			raise Exception("Unable to establish connection to Roboclaw motor controllers")
 		self.killMotors()
 		self.enc_min =[]
