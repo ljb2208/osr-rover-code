@@ -66,10 +66,33 @@ class Robot():
 		'''
 		temp = (e_max + e_min)/2 + ((e_max - e_min)/90)*deg
 		if temp < e_min: temp = e_min
-		elif temp > e_max: temp = e_max
-		print temp,e_max,e_min,deg
+		elif temp > e_max: temp = e_max		
 		return temp
 
+	def calculateRotationVelocity(self, r):
+		# returns velocity for rotations in place
+		# if (r == 0):
+		return [0] * 6
+
+	def calculateRotationAngles(self, r):
+		# returns wheels angles for rotations in place
+
+		if (r == 0):
+			return [0] * 4
+
+		direction = 1
+
+		if (r < 0):
+			direction = -1
+
+		tick = []
+		tick.append(self.deg2tick(45*direction, self.enc_min[0], self.enc_max[0]))
+		tick.append(self.deg2tick(45*-direction, self.enc_min[1], self.enc_max[1]))
+		tick.append(self.deg2tick(45*-direction, self.enc_min[2], self.enc_max[2]))
+		tick.append(self.deg2tick(45*direction, self.enc_min[3], self.enc_max[3]))
+
+		return tick
+		
 	def calculateVelocity(self,v,r):
 		'''
 		Returns a list of speeds for each individual drive motor based on current turning radius
@@ -217,24 +240,29 @@ class Robot():
 			if abs(tick[i] - cur_enc[i]) < 25:
 				#rospy.loginfo(str(i) + ", " + str(tick[i]) + ", " + str(cur_enc[i]) + ", " + str(self.mids[i]))		 
 				tick[i] = -1          # stopping the motor when it is close to target reduced motor jitter
-		print tick
+
 		rospy.logdebug("degrees: " + str(tar_enc))
 		rospy.logdebug("ticks: " + str(tick))
 		return tick
 
-	def generateCommands(self,v,r,encs):
+	def generateCommands(self,v,r,rotation, encs):
 		'''
 		Driving method for the Rover, rover will not do any commands if any motor controller
 		throws an error
 
 		:param int v: driving velocity command, % based from -100 (backward) to 100 (forward)
 		:param int r: driving turning radius command, % based from -100 (left) to 100 (right)
+		:param int rotation: rotation command for turning in place % based from -100 (left) to 100 (right)
 
 		'''
 		#fix params list above ^^
 		#cur_radius = self.approxTurningRadius(self.getCornerDeg(encs))
-		velocity   = self.calculateVelocity(v,r)
-		ticks      = self.calculateTargetTick(self.calculateTargetDeg(r),encs)
+		if rotation != 0:
+			velocity = self.calculateRotationVelocity(rotation)
+			ticks = self.calculateRotationAngles(rotation)
+		else:
+			velocity   = self.calculateVelocity(v,r)
+			ticks      = self.calculateTargetTick(self.calculateTargetDeg(r),encs)
 
 		rospy.logdebug("targetdeg: " + str(self.calculateTargetDeg(r)) + " v: " + str(v) + " r: " + str(r) + " vel: " + str(velocity) + " ticks: " + str(ticks) + " encs: " + str(encs) + " mids: " + str(self.mids))
 

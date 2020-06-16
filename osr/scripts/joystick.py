@@ -33,13 +33,12 @@ def callback(data):
 
 	publish_runstop = False
 
-	led_msg = Int64MultiArray()
 	joy_out = Joystick()
 
-	y =  data.axes[1]
-	x = -data.axes[0]
-	x1 =-data.axes[3]
-	rt = data.axes[2]
+	y =  data.axes[1]	
+	x =-data.axes[3]
+	lt = data.axes[2]
+	rt = data.axes[5]
 
 	now = time.time()
 
@@ -53,26 +52,12 @@ def callback(data):
 		if (now - last_auto > 0.75):
 			publish_runstop = True
 			auto = not auto
-			last_auto = time.time()
-
-	cmd = two_joy(x1,y,rt)
-
+			last_auto = time.time()	
 
 	dpad = data.buttons[11:]
 	if 1 in dpad: mode = dpad.index(1)
-	
-
-	led_msg.data = [mode,1]
-	if now - last > 0.75:
-		counter +=1
-	else:
-		counter = 0
-	if counter > 3:
-		led_msg.data = [mode,0]
-
-	last = time.time()
-	led_pub.publish(led_msg)
-	#cmd = cartesian2polar_45(x,y)
+		
+	last = time.time()		
 
 	if (publish_runstop):
 		rs = RunStop()
@@ -80,74 +65,34 @@ def callback(data):
 		rs.auto = auto
 		runstop_pub.publish(rs)
 
-
-	cmd = two_joy(x1,y,rt)
+	rot = rotate(x, rt)
+	cmd = two_joy(x,y,lt)
 	joy_out = Joystick()
-	joy_out.vel = cmd[0]
-	joy_out.steering = cmd[1]
+	joy_out.rotation = rot
+
+	if rot == 0:
+		joy_out.vel = cmd[0]
+		joy_out.steering = cmd[1]
+	else:
+		joy_out.vel = 0
+		joy_out.steering = 0
+
 	joy_out.mode = mode
 	joy_out.connected = True
 	pub.publish(joy_out)
 
-def old(x,y):
-	if y < 0: direction = -1
-	else: direction = 1
 
-	r = int(100*math.sqrt(x*x + y*y)) * direction
+def rotate(x, rt):
+	if rt > 0:
+		return 0
 
-	if r > 100: r = 100
-	elif r < -100: r = -100
+	x *= 100
+	return int(x)
 
-	if -15 <= r <= 15:
-		r = 0
-		theta = 0
-	#there is some small issue where every once and a while the steering
-	#goes to max negative for one or two values at very small values of y
-	#this eventually needs to be fixed
-	elif -0.01 <= y <= 0.01:
-		theta = 100 * direction
-	else:
-		try:
-			theta = int(math.degrees(math.atan(x/y)) * direction * (10/9.0))
-		except:
-			theta = 0
-	return r,theta
-
-def cartesian2polar_45(x,y):
-	if y < 0: direction = -1
-	else: direction = 1
-
-	r = math.sqrt(x*x + y*y)
-	r = min(r,1.0)
-	try:
-		theta = math.degrees(math.atan2(x,y))
-	except:
-		if x >0: theta = 90
-		else: theta = -90
-	if (-45 <= theta <= 45) or (135 <=theta <= 180) or (-180 <=theta <= -135):
-		vel = int(r * 100) * direction
-	else:
-		vel = (2.0/math.sqrt(2))*y*100
-	vel = min(100,vel)
-	vel = max(-100,vel)
-
-	'''
-	if y >= 0:
-		steering = theta * 10/9.0
-	else:
-		if x >= 0: x_dir = 1
-		else: x_dir = -1
-		steering = (180 - abs(theta)) * (10/9.0) * x_dir
-	'''
-	steering = x * 2.0/math.sqrt(2) * 100
-	steering = min(100,steering)
-	steering = max(-100,steering)
-	return (int(vel),int(steering))
-
-def two_joy(x,y,rt):
+def two_joy(x,y,lt):
 	boost = 0
-	if rt <= 0:
-		boost = 50*-rt
+	if lt <= 0:
+		boost = 50*-lt
 	if y >=0: y = (y * 50) + boost
 	else: y = (y *50) - boost
 	x *= 100
@@ -156,13 +101,12 @@ def two_joy(x,y,rt):
 if __name__ == '__main__':
 	global pub
 	global runstop_pub
-	#global led_pub
+	
 	rospy.init_node('joystick')
 	rospy.loginfo('joystick started')
 
 	sub = rospy.Subscriber("/joy", Joy, callback)
 	pub = rospy.Publisher('joystick', Joystick, queue_size=1)
-	led_pub = rospy.Publisher('led_cmds', Int64MultiArray, queue_size=1)
 	runstop_pub = rospy.Publisher('runstop', RunStop, queue_size=1)
 
 	rospy.spin()
