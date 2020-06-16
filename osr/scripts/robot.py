@@ -86,10 +86,10 @@ class Robot():
 			direction = -1
 
 		tick = []
-		tick.append(self.deg2tick(45*direction, self.enc_min[0], self.enc_max[0]))
-		tick.append(self.deg2tick(45*-direction, self.enc_min[1], self.enc_max[1]))
-		tick.append(self.deg2tick(45*-direction, self.enc_min[2], self.enc_max[2]))
-		tick.append(self.deg2tick(45*direction, self.enc_min[3], self.enc_max[3]))
+		tick.append(self.deg2tick(45*-direction, self.enc_min[0], self.enc_max[0]))
+		tick.append(self.deg2tick(45*direction, self.enc_min[1], self.enc_max[1]))
+		tick.append(self.deg2tick(45*direction, self.enc_min[2], self.enc_max[2]))
+		tick.append(self.deg2tick(45*-direction, self.enc_min[3], self.enc_max[3]))
 
 		return tick
 		
