@@ -67,7 +67,7 @@ def callback(data):
 
 	rot = rotate(x, rt)
 	cmd = two_joy(x,y,lt)
-	joy_out = Joystick()
+	joy_out = Joystick()	
 	joy_out.rotation = rot
 
 	if rot == 0:
@@ -83,7 +83,7 @@ def callback(data):
 
 
 def rotate(x, rt):
-	if rt > 0:
+	if rt >= 0:
 		return 0
 
 	x *= 100

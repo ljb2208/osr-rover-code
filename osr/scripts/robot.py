@@ -71,8 +71,19 @@ class Robot():
 
 	def calculateRotationVelocity(self, r):
 		# returns velocity for rotations in place
-		# if (r == 0):
-		return [0] * 6
+		if (r == 0):
+			return [0] * 6		
+		
+		vel = []		
+		
+		vel.append(-r)		
+		vel.append(-r)
+		vel.append(-r)
+		vel.append(r)
+		vel.append(r)
+		vel.append(r)
+
+		return vel
 
 	def calculateRotationAngles(self, r):
 		# returns wheels angles for rotations in place
@@ -80,17 +91,21 @@ class Robot():
 		if (r == 0):
 			return [0] * 4
 
-		direction = 1
+		# direction = 1
 
-		if (r < 0):
-			direction = -1
+		# if (r < 0):
+		# 	direction = -1
 
 		tick = []
-		tick.append(self.deg2tick(45*-direction, self.enc_min[0], self.enc_max[0]))
-		tick.append(self.deg2tick(45*direction, self.enc_min[1], self.enc_max[1]))
-		tick.append(self.deg2tick(45*direction, self.enc_min[2], self.enc_max[2]))
-		tick.append(self.deg2tick(45*-direction, self.enc_min[3], self.enc_max[3]))
-
+		tick.append(self.deg2tick(-45, self.enc_min[0], self.enc_max[0]))
+		tick.append(self.deg2tick(45, self.enc_min[1], self.enc_max[1]))
+		tick.append(self.deg2tick(-45, self.enc_min[2], self.enc_max[2]))
+		tick.append(self.deg2tick(45, self.enc_min[3], self.enc_max[3]))
+		# tick.append(self.deg2tick(45*-direction, self.enc_min[0], self.enc_max[0]))
+		# tick.append(self.deg2tick(45*-direction, self.enc_min[1], self.enc_max[1]))
+		# tick.append(self.deg2tick(45*-direction, self.enc_min[2], self.enc_max[2]))
+		# tick.append(self.deg2tick(45*-direction, self.enc_min[3], self.enc_max[3]))
+		
 		return tick
 		
 	def calculateVelocity(self,v,r):
@@ -257,13 +272,15 @@ class Robot():
 		'''
 		#fix params list above ^^
 		#cur_radius = self.approxTurningRadius(self.getCornerDeg(encs))
-		if rotation != 0:
-			velocity = self.calculateRotationVelocity(rotation)
+		if rotation != 0:			
+		 	velocity = self.calculateRotationVelocity(rotation)
 			ticks = self.calculateRotationAngles(rotation)
+			rospy.loginfo("Rotation velocity: " + str(velocity))
 		else:
 			velocity   = self.calculateVelocity(v,r)
-			ticks      = self.calculateTargetTick(self.calculateTargetDeg(r),encs)
+			ticks      = self.calculateTargetTick(self.calculateTargetDeg(r),encs)			
 
+		rospy.loginfo("velocity: " + str(velocity))
 		rospy.logdebug("targetdeg: " + str(self.calculateTargetDeg(r)) + " v: " + str(v) + " r: " + str(r) + " vel: " + str(velocity) + " ticks: " + str(ticks) + " encs: " + str(encs) + " mids: " + str(self.mids))
 
 		return (velocity,ticks)

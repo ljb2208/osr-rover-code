@@ -4,9 +4,9 @@
 	<param name="/baud_rate" type="int" value="115200" />
 	<param name="/motor_controller_device" type="string" value="/dev/serial0" />
 	<param name="/motor_controller_addresses" type="string" value="128,129,130,131,132" />
-	
-	<param name="/enc_min" type="string" value="155,90,175,424" />
-	<param name="/enc_max" type="string" value="1321,1244,1366,1565" />
+
+	<param name="/enc_min" type="string" value="130,73,172,435" />
+	<param name="/enc_max" type="string" value="1330,1252,1344,1539" />
 	
 	<param name="/qpps" type="string" value="0,0,0,0" />
 	<param name="/accel" type="string" value="0,0,0,0" />
