@@ -5,14 +5,15 @@
 	<param name="/motor_controller_device" type="string" value="/dev/serial0" />
 	<param name="/motor_controller_addresses" type="string" value="128,129,130,131,132" />
 
-	<param name="/enc_min" type="string" value="130,73,172,435" />
-	<param name="/enc_max" type="string" value="1330,1252,1344,1539" />
+	<param name="/enc_min" type="string" value="151,73,172,435" />
+	<param name="/enc_max" type="string" value="1327,1252,1344,1539" />
 	
 	<param name="/qpps" type="string" value="0,0,0,0" />
 	<param name="/accel" type="string" value="0,0,0,0" />
 	<param name="battery_low" type="int" value="11" />
 	<param name="battery_high" type="int" value="18" />
-	<param name="mech_dist" type="string" value="7.254,10.5,10.5,10.073" />
+	<!-- <param name="mech_dist" type="string" value="7.254,10.5,10.5,10.073" /> -->
+	<param name="mech_dist" type="string" value="6.0,13.25,10.5,9.0" />
 	
 	<!-- Nodes to run the Open Source Rover -->
 	<node name="odometry" pkg="osr_odometry" type="osr_odom_ackerman2.py" respawn="true" machine="rover-osr">
