@@ -14,6 +14,6 @@
 
 
 	<!-- Nodes to run the Open Source Rover -->
-	<node name="rover" pkg="osr" type="rover.py" respawn="true" />
+	<node name="rover" pkg="osr" type="rover_v2.py" respawn="true" />
 </launch>
 	
