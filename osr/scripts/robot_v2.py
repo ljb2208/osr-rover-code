@@ -74,7 +74,7 @@ class RobotV2():
 
 		return vel
 			
-	def generateCommands(self,v,r,rotation, encs):
+	def generateCommands(self,v,r,rotation):
 		'''
 		Driving method for the Rover, rover will not do any commands if any motor controller
 		throws an error

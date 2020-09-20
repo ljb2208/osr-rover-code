@@ -21,7 +21,7 @@ def joy_callback(message):
 	cmds = Commands()
 
 	if (auto == False):
-		out_cmds = osr.generateCommands(message.vel,message.steering,message.rotation, encs)	
+		out_cmds = osr.generateCommands(message.vel,message.steering,message.rotation)	
 	else:
 		return
 
